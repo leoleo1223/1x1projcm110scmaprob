@@ -126,7 +126,7 @@ sns.set_theme(style="whitegrid", palette="crest")
 # ==========================================
 @st.cache_data(show_spinner="Fetching and cleaning dataset...")
 def fetch_clean_student_data():
-    file_path = Path(__file__).parent / "Dataset" / "Student_performance_10k.csv"
+    file_path = Path(__file__).parent / "Student_performance_10k.csv"
     df = pd.read_csv(file_path)
 
     # Ensure numeric types are strictly numeric
