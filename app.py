@@ -157,12 +157,15 @@ if 'current_page' not in st.session_state:
 def go_to_findings():
     st.session_state.current_page = "Findings"
 
-
 menu_options = ["Home", "Findings", "Resources", "About Us"]
 logo_col, menu_col, _spacer = st.columns([1, 10, 1], vertical_alignment="center")
 
 with logo_col:
-    st.markdown('<div class="nav-logo">LOGO</div>', unsafe_allow_html=True)
+    logo_path = Path(__file__).parent / "Images" / "Logo.png"
+    if logo_path.exists():
+        st.image(str(logo_path), width=40)
+    else:
+        st.markdown('<div class="nav-logo">LOGO</div>', unsafe_allow_html=True)
 
 with menu_col:
     st.radio("Navigate:", menu_options, key="current_page", horizontal=True, label_visibility="collapsed")
