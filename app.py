@@ -57,14 +57,43 @@ CUSTOM_CSS = """
         max-width: 100% !important; 
     }
 
-    /* --- Custom Top Navigation Menu --- */
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) { 
+    /* ========================================= */
+    /* --- STRICT CUSTOM TOP NAVIGATION MENU --- */
+    /* ========================================= */
+    
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) { 
         position: sticky; top: 0; z-index: 999; 
-        background-color: var(--nav-bg); padding: 10px 16px; 
-        border-bottom: 1px solid var(--nav-border); border-radius: 8px; gap: 12px !important; 
+        background-color: var(--nav-bg); 
+        padding: 4px 20px !important; 
+        border-bottom: 1px solid var(--nav-border); 
+        border-radius: 8px; 
+        gap: 16px !important; 
+        align-items: center !important;
     }
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
+    
+    /* Strip invisible padding from internal nav columns */
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) > div[data-testid="column"] > div {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
+
+    /* Kill default Streamlit image margins ONLY inside the nav */
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
+    
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) img { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+    }
 
     .nav-logo { 
         display: flex; align-items: center; justify-content: center; 
@@ -162,6 +191,8 @@ menu_options = ["Home", "Findings", "Resources", "About Us"]
 logo_col, menu_col, _spacer = st.columns([1, 10, 1], vertical_alignment="center")
 
 with logo_col:
+    st.markdown('<span class="nav-anchor"></span>', unsafe_allow_html=True)
+    
     logo_path = Path(__file__).parent / "Images" / "Logo.png"
     if logo_path.exists():
         st.image(str(logo_path), width=40)
