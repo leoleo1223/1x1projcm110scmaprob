@@ -57,22 +57,17 @@ CUSTOM_CSS = """
         max-width: 100% !important; 
     }
 
- /* ========================================= */
     /* --- STRICT CUSTOM TOP NAVIGATION MENU --- */
-    /* ========================================= */
-    
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) { 
         position: sticky; top: 0; z-index: 999; 
         background-color: var(--nav-bg); 
-        /* 0px top and bottom padding to make the bar as slim as possible */
         padding: 0px 20px !important; 
         border-bottom: 1px solid var(--nav-border); 
         border-radius: 8px; 
         gap: 16px !important; 
         align-items: center !important;
     }
-    
-  /* Strip invisible padding from internal nav columns AND Streamlit's element containers */
+
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) > div[data-testid="column"] > div,
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) .element-container {
         padding-top: 0 !important;
@@ -84,7 +79,6 @@ CUSTOM_CSS = """
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
 
-    /* Aggressively kill default Streamlit image wrappers and NUDGE LOGO UP */
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"],
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] > div { 
         margin: 0 !important; 
@@ -92,10 +86,9 @@ CUSTOM_CSS = """
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        /* Tweak this negative value (-4px, -6px, etc.) to shift the logo perfectly up or down */
         transform: translateY(-4px); 
     }
-    
+
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) img { 
         margin: 0 !important; 
         padding: 0 !important; 
@@ -107,7 +100,7 @@ CUSTOM_CSS = """
         background-color: var(--accent-strong); color: var(--nav-bg); 
         font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; flex-shrink: 0; 
     }
-    
+
     /* --- Streamlit Radio Button Overrides (Menu Tabs) --- */
     [data-testid="stRadio"] { margin: 0 !important; padding: 0 !important; }
     [data-testid="stRadio"] div[role="radiogroup"] { display: flex; justify-content: flex-start; align-items: center; gap: 28px; padding: 0 !important; min-height: 0 !important; }
@@ -130,12 +123,23 @@ CUSTOM_CSS = """
 
     /* --- Buttons and Inputs --- */
     .stButton > button, .stDownloadButton > button { 
-        background-color: var(--accent-deep); color: #FFFFFF; 
-        border: 1px solid var(--accent); border-radius: 8px; transition: all 0.2s ease; 
+        background-color: var(--accent-deep) !important; 
+        color: #FFFFFF !important; 
+        border: 1px solid var(--accent) !important; 
+        border-radius: 8px !important; 
+        transition: all 0.2s ease !important; 
     }
+
+    .stButton > button *, .stDownloadButton > button * {
+        color: #FFFFFF !important;
+    }
+
     .stButton > button:hover, .stDownloadButton > button:hover { 
-        background-color: var(--accent); border-color: var(--accent-strong); color: #FFFFFF; 
+        background-color: var(--accent) !important; 
+        border-color: var(--accent-strong) !important; 
+        color: #FFFFFF !important; 
     }
+
     [data-baseweb="select"] > div, .stTextInput input, .stMultiSelect [data-baseweb="select"] > div { 
         background-color: var(--bg-surface) !important; border-color: var(--border-soft) !important; color: var(--text-primary) !important; 
     }
@@ -198,7 +202,7 @@ logo_col, menu_col, _spacer = st.columns([1, 10, 1], vertical_alignment="center"
 
 with logo_col:
     st.markdown('<span class="nav-anchor"></span>', unsafe_allow_html=True)
-    
+
     logo_path = Path(__file__).parent / "Images" / "Logo.png"
     if logo_path.exists():
         st.image(str(logo_path), width=60)
@@ -215,10 +219,26 @@ with menu_col:
 # --- HOME PAGE ---
 if st.session_state.current_page == "Home":
     st.title("Student Performance Analytics")
-    st.write("### Project Introduction")
-    st.write(
-        "Welcome to the Student Performance Analytics Dashboard. This application is built to explore, analyze, and predict outcomes based on a 10,000-entry dataset detailing student demographics, preparation, and subject scores.")
-    st.button("View Data Findings", on_click=go_to_findings)
+    home_col1, home_col2 = st.columns([1.2, 1], gap="large")
+
+    with home_col1:
+        st.write("### Project Introduction")
+        st.write(
+            "Welcome to the Student Performance Analytics Dashboard. This application is built to explore, analyze, and predict outcomes based on a 10,000-entry dataset detailing student demographics, preparation, and subject scores."
+        )
+        st.write("### What You Can Do")
+        st.markdown("""
+        * 📊 **Analyze Trends**
+        * 📈 **Visualize Data**
+        * 🤖 **Predict Performance**
+        * 🔍 **Discover Insights**
+        """)
+        st.write("")
+        st.button("View Data Findings", on_click=go_to_findings)
+
+    with home_col2:
+        home_img_path = Path("images") / "Home_Page.jpeg"
+        st.image(str(home_img_path), use_container_width=True, caption="Empowering Education through Data")
 
 # --- FINDINGS PAGE ---
 elif st.session_state.current_page == "Findings":
@@ -252,7 +272,7 @@ elif st.session_state.current_page == "Findings":
 
             st.write("#### Categorical Variables Overview (Frequency Distributions)")
             cat_cols = [c for c in
-                        ['Gender', 'Race/Ethnicity', 'Parental Education', 'Lunch', 'Test Preparation', 'Grade'] if
+                        ['Gender', 'Ethnicity', 'Parental Education', 'Lunch', 'Test Preparation', 'Grade'] if
                         c in df.columns]
 
             c1, c2, c3 = st.columns(3)
@@ -266,6 +286,7 @@ elif st.session_state.current_page == "Findings":
         elif subsection == "2. Univariate Analysis":
             st.write("Analyzing the distribution of single variables to understand spread and centrality.")
 
+            # Row 1: Total Score & Grade
             col1, col2 = st.columns(2)
             with col1:
                 st.write("#### Total Score Distribution")
@@ -291,13 +312,45 @@ elif st.session_state.current_page == "Findings":
                     st.info(
                         "💡 **Interpretation:** [Discuss which grades are most common, the overall pass/fail ratio, and what this suggests about general student performance.]")
 
+            st.markdown("---")
+
+            # Row 2: Parental Education & Ethnicity
+            col3, col4 = st.columns(2)
+            with col3:
+                st.write("#### Parental Education Distribution")
+                if 'Parental Education' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Parental Education'])
+                    fig3, ax3 = plt.subplots(figsize=(6, 4))
+                    # Plotted horizontally so the long text labels don't overlap
+                    sns.countplot(data=plot_df, y='Parental Education', color='#2E7D6B',
+                                  order=plot_df['Parental Education'].value_counts().index, ax=ax3)
+                    ax3.set_ylabel("")
+                    ax3.set_xlabel("Count")
+                    st.pyplot(fig3)
+                    st.info(
+                        "💡 **Interpretation:** Displays the frequency of the highest education level achieved by the students' parents.")
+
+            with col4:
+                st.write("#### Ethnicity Distribution")
+                if 'Ethnicity' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Ethnicity'])
+                    fig4, ax4 = plt.subplots(figsize=(6, 4))
+                    # Sorted alphabetically for neatness
+                    sns.countplot(data=plot_df, x='Ethnicity', color='#2E7D6B',
+                                  order=sorted(plot_df['Ethnicity'].unique()), ax=ax4)
+                    ax4.set_xlabel("Ethnicity Groups")
+                    st.pyplot(fig4)
+                    st.info(
+                        "💡 **Interpretation:** Highlights the representation of different ethnic groups within the dataset.")
+
         # 3. BIVARIATE ANALYSIS
         elif subsection == "3. Bivariate Analysis":
             st.write("Examining relationships between pairs of variables.")
 
             biv_option = st.radio(
                 "Choose comparison:",
-                ["Gender vs Total Score", "Test Prep vs Total Score", "Parental Education vs Total Score"],
+                ["Gender vs Total Score", "Test Prep vs Total Score", "Parental Education vs Total Score",
+                 "Ethnicity vs Total Score"],
                 horizontal=True
             )
 
@@ -313,13 +366,21 @@ elif st.session_state.current_page == "Findings":
 
                 elif biv_option == "Test Prep vs Total Score" and 'Test Preparation' in df_clean.columns:
                     plot_df = df_clean.dropna(subset=['Test Preparation', 'Total Score'])
-                    sns.violinplot(data=plot_df, x='Test Preparation', y='Total Score', color='#2E7D6B', ax=ax)
+                    # Converted to boxplot as requested
+                    sns.boxplot(data=plot_df, x='Test Preparation', y='Total Score', color='#2E7D6B', ax=ax)
                     st.write("#### Impact of completing a Test Preparation Course")
 
                 elif biv_option == "Parental Education vs Total Score" and 'Parental Education' in df_clean.columns:
                     plot_df = df_clean.dropna(subset=['Parental Education', 'Total Score'])
+                    # For longer text labels like parental education, flipping x and y can improve readability
                     sns.boxplot(data=plot_df, x='Total Score', y='Parental Education', color='#2E7D6B', ax=ax)
                     st.write("#### Does Parental Education correlate with higher scores?")
+
+                elif biv_option == "Ethnicity vs Total Score" and 'Ethnicity' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Ethnicity', 'Total Score'])
+                    sns.boxplot(data=plot_df, x='Ethnicity', y='Total Score', color='#2E7D6B',
+                                order=sorted(plot_df['Ethnicity'].unique()), ax=ax)
+                    st.write("#### Performance Differences Across Ethnic Groups")
 
                 st.pyplot(fig)
                 st.info(
@@ -335,6 +396,7 @@ elif st.session_state.current_page == "Findings":
                 numeric_df = df_clean[num_cols].dropna()
                 corr_matrix = numeric_df.corr()
 
+                # Original Correlation Views
                 col1, col2 = st.columns([1, 1])
                 with col1:
                     st.write("#### Correlation Heatmap")
@@ -355,6 +417,38 @@ elif st.session_state.current_page == "Findings":
                         st.info(
                             "💡 **Interpretation:** [Explain the trend seen in the scatterplot. E.g., a tight upward cluster indicates a strong positive relationship between Reading and Writing skills.]")
 
+                st.markdown("---")
+
+                # Socioeconomic vs Academic Performance
+                st.write("#### Socioeconomic vs Academic Performance")
+                st.write(
+                    "To understand socioeconomic impact, we map the `Lunch` variable (where Standard = 1, Free/Reduced = 0) and correlate it with the students' academic scores.")
+
+                if 'Lunch' in df_clean.columns:
+                    socio_df = df_clean.copy()
+                    # Creating a numerical proxy for Socioeconomic Status
+                    socio_df['Lunch_Num'] = socio_df['Lunch'].map({'Standard': 1, 'Free/Reduced': 0})
+
+                    socio_cols = ['Lunch_Num'] + num_cols
+                    # Get correlation strictly with the Lunch_Num feature
+                    socio_corr = socio_df[socio_cols].corr()[['Lunch_Num']].drop('Lunch_Num').sort_values(
+                        by='Lunch_Num', ascending=False)
+
+                    fig3, ax3 = plt.subplots(figsize=(8, 4))
+                    sns.barplot(x=socio_corr['Lunch_Num'], y=socio_corr.index, color="#2E7D6B", ax=ax3)
+                    ax3.set_xlabel("Correlation Coefficient (with Standard Lunch)")
+                    ax3.set_ylabel("Academic Scores")
+                    ax3.set_xlim(-0.5, 0.5)  # Setting reasonable limits for correlation
+
+                    # Add vertical line at 0
+                    ax3.axvline(0, color='black', linewidth=0.8)
+                    st.pyplot(fig3)
+
+                    st.info(
+                        "💡 **Interpretation:** A positive correlation implies that having a 'Standard' lunch (often a proxy for relatively higher socioeconomic status) is associated with higher scores. A longer bar signifies a stronger relationship.")
+                else:
+                    st.warning("The 'Lunch' column is missing; unable to calculate socioeconomic correlation.")
+
         # 5. PREDICTIVE MODELING
         elif subsection == "5. Predictive Modeling":
             st.write(
@@ -363,7 +457,8 @@ elif st.session_state.current_page == "Findings":
             if 'Grade' not in df_clean.columns:
                 st.error("The 'Grade' column is missing. Cannot build a predictive model.")
             else:
-                desired_features = ['Gender', 'Test Preparation', 'Race/Ethnicity', 'Parental Education']
+                # 1. Define Features (Including Lunch)
+                desired_features = ['Gender', 'Test Preparation', 'Ethnicity', 'Parental Education', 'Lunch']
                 features = [f for f in desired_features if f in df_clean.columns]
 
                 ml_df = df_clean.dropna(subset=['Grade'] + features).copy()
@@ -374,11 +469,13 @@ elif st.session_state.current_page == "Findings":
                 elif ml_df.empty:
                     st.error("Not enough clean data to train the model.")
                 else:
+                    # 2. Train the Model
                     X = ml_df[features]
                     y = ml_df['Is_A_Grade']
 
                     X_encoded = pd.get_dummies(X, drop_first=True)
-                    X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
+                    X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2,
+                                                                        random_state=42)
 
                     with st.spinner('Training Random Forest Classifier...'):
                         clf = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -386,6 +483,7 @@ elif st.session_state.current_page == "Findings":
                         y_pred = clf.predict(X_test)
                         acc = accuracy_score(y_test, y_pred)
 
+                    # 3. Display Model Performance
                     col1, col2 = st.columns(2)
                     with col1:
                         st.success(f"**Model Accuracy:** {acc * 100:.2f}%")
@@ -408,6 +506,48 @@ elif st.session_state.current_page == "Findings":
                         st.pyplot(fig)
                         st.info(
                             "💡 **Feature Interpretation:** [Explain which demographic or preparation factors carry the most weight in predicting an 'A' grade according to the model.]")
+
+                    # 4. LIVE PREDICTION TOOL
+                    st.markdown("---")
+                    st.write("#### 🔮 Make a Live Prediction")
+                    st.write("Enter student details below to predict if they will achieve an **A Grade**.")
+
+                    col_p1, col_p2 = st.columns(2)
+                    with col_p1:
+                        user_gender = st.selectbox("Select Gender", df_clean['Gender'].dropna().unique())
+                        user_prep = st.selectbox("Select Test Preparation",
+                                                 df_clean['Test Preparation'].dropna().unique())
+                        user_lunch = st.selectbox("Select Lunch", df_clean['Lunch'].dropna().unique())
+                    with col_p2:
+                        user_ethnicity = st.selectbox("Select Ethnicity",
+                                                      df_clean['Ethnicity'].dropna().unique())
+                        user_pedu = st.selectbox("Select Parental Education",
+                                                 df_clean['Parental Education'].dropna().unique())
+
+                    if st.button("Predict Grade"):
+                        # Package inputs
+                        user_data = pd.DataFrame({
+                            'Gender': [user_gender],
+                            'Test Preparation': [user_prep],
+                            'Ethnicity': [user_ethnicity],
+                            'Parental Education': [user_pedu],
+                            'Lunch': [user_lunch]
+                        })
+
+                        # Encode inputs to match training data structure
+                        user_encoded = pd.get_dummies(user_data)
+                        user_encoded = user_encoded.reindex(columns=X_encoded.columns, fill_value=0)
+
+                        # Predict
+                        prediction = clf.predict(user_encoded)[0]
+
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        if prediction == 1:
+                            st.success(
+                                "🎉 **Prediction:** Based on the model, this student is likely to achieve an **A Grade**!")
+                        else:
+                            st.warning(
+                                "📊 **Prediction:** Based on the model, this student is likely to achieve a **Grade B or lower**.")
 
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_performance_10k.csv' is saved in the 'Dataset' folder.")
@@ -442,11 +582,11 @@ elif st.session_state.current_page == "Resources":
                     selected_gender = []
 
             with col2:
-                if 'Race/Ethnicity' in df.columns:
-                    unique_race = sorted([g for g in df['Race/Ethnicity'].unique() if pd.notna(g)])
-                    selected_race = st.multiselect("Race/Ethnicity", options=unique_race, default=[])
+                if 'Ethnicity' in df.columns:
+                    unique_ethnicity = sorted([g for g in df['Ethnicity'].unique() if pd.notna(g)])
+                    selected_ethnicity = st.multiselect("Ethnicity", options=unique_ethnicity, default=[])
                 else:
-                    selected_race = []
+                    selected_ethnicity = []
 
                 if 'Lunch' in df.columns:
                     unique_lunch = sorted([g for g in df['Lunch'].unique() if pd.notna(g)])
@@ -478,8 +618,8 @@ elif st.session_state.current_page == "Resources":
         if selected_gender and 'Gender' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Gender'].isin(selected_gender)]
 
-        if selected_race and 'Race/Ethnicity' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['Race/Ethnicity'].isin(selected_race)]
+        if selected_ethnicity and 'Ethnicity' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Ethnicity'].isin(selected_ethnicity)]
 
         if selected_lunch and 'Lunch' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Lunch'].isin(selected_lunch)]
@@ -505,7 +645,7 @@ elif st.session_state.current_page == "Resources":
 
             * **Student Number:** Represents the unique roll number of the student.
             * **Gender:** Useful for analyzing performance differences between male and female students.
-            * **Race/Ethnicity:** Allows analysis of academic performance trends across different racial or ethnic groups.
+            * **Ethnicity:** Allows analysis of academic performance trends across different ethnic groups.
             * **Parental Education:** Indicates the educational background of the student's family.
             * **Lunch:** Shows whether students receive a free or reduced lunch, which is often a socioeconomic indicator.
             * **Test Preparation:** Tells whether students completed a test preparation course, which could impact their performance.
@@ -549,13 +689,10 @@ elif st.session_state.current_page == "About Us":
             full_img_path = str(image_base_path / img_filename)
 
             try:
-                # Render image WITHOUT the built-in caption
                 st.image(full_img_path, use_container_width=True)
             except Exception:
-                # Fallback in case the image file is not found
                 st.error(f"Missing {img_filename}")
 
-            # Render name and email tightly grouped using Markdown/HTML
             st.markdown(f"""
                 <div style="text-align: center; margin-top: 8px;">
                     <p style="margin-bottom: 2px; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
