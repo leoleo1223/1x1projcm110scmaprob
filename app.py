@@ -58,13 +58,14 @@ CUSTOM_CSS = """
     }
 
     /* --- Custom Top Navigation Menu --- */
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) { 
+    div[data-testid="stHorizontalBlock"]:has(.nav-logo, [data-testid="stImage"]) { 
         position: sticky; top: 0; z-index: 999; 
         background-color: var(--nav-bg); padding: 10px 16px; 
         border-bottom: 1px solid var(--nav-border); border-radius: 8px; gap: 12px !important; 
+        align-items: center;
     }
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
+    div[data-testid="stHorizontalBlock"]:has(.nav-logo, [data-testid="stImage"]) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
+    div[data-testid="stHorizontalBlock"]:has(.nav-logo, [data-testid="stImage"]) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
 
     .nav-logo { 
         display: flex; align-items: center; justify-content: center; 
@@ -162,7 +163,12 @@ menu_options = ["Home", "Findings", "Resources", "About Us"]
 logo_col, menu_col, _spacer = st.columns([1, 10, 1], vertical_alignment="center")
 
 with logo_col:
-    st.markdown('<div class="nav-logo">LOGO</div>', unsafe_allow_html=True)
+    # Updated path to pull from the 'images' folder
+    logo_path = Path("images") / "Logo.png"
+    if logo_path.exists():
+        st.image(str(logo_path), width=40)
+    else:
+        st.markdown('<div class="nav-logo">LOGO</div>', unsafe_allow_html=True)
 
 with menu_col:
     st.radio("Navigate:", menu_options, key="current_page", horizontal=True, label_visibility="collapsed")
@@ -220,6 +226,9 @@ elif st.session_state.current_page == "Findings":
                 with cols[i % 3]:
                     st.write(f"**{col}**")
                     st.dataframe(df[col].value_counts(), use_container_width=True)
+            
+            # Consolidated Interpretation Summary Box
+            st.info("💡 **Interpretation:** [Add overall insights here. For example, mention the general averages of the scores and identify the most common demographic groupings.]")
 
         # 2. UNIVARIATE ANALYSIS
         elif subsection == "2. Univariate Analysis":
@@ -373,10 +382,8 @@ elif st.session_state.current_page == "Resources":
         df = fetch_clean_student_data()
         filtered_df = df.copy()
 
-        # 1. Search Bar at the top
         search_query = st.text_input("Search by Student Number:", value="", placeholder="e.g., std-100")
 
-        # 2. Expander for all categorical filters
         with st.expander("📊 Filter Data by Categories (Leave empty to show all)", expanded=True):
             col1, col2, col3 = st.columns(3)
             
@@ -413,7 +420,6 @@ elif st.session_state.current_page == "Resources":
                     selected_prep = st.multiselect("Test Preparation", options=unique_prep, default=[])
                 else: selected_prep = []
 
-        # 3. Apply Filters to the Dataframe
         if search_query and 'Student Number' in filtered_df.columns:
             filtered_df = filtered_df[
                 filtered_df['Student Number'].astype(str).str.contains(search_query, case=False, na=False)]
@@ -436,7 +442,6 @@ elif st.session_state.current_page == "Resources":
         if selected_prep and 'Test Preparation' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Test Preparation'].isin(selected_prep)]
 
-        # 4. Display Results
         st.caption(f"Showing {len(filtered_df)} of {len(df)} records")
         st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 
@@ -477,7 +482,6 @@ elif st.session_state.current_page == "About Us":
     st.write("Meet the team behind this analysis application.")
 
     cols = st.columns(5)
-    
     members = [
         {"name": "Gerard Emmanuel Bernabe", "email": "gmbernabe@up.edu.ph", "image": "Gerard.jpg"},
         {"name": "Johnicky Benedict Salvador", "email": "jesalvador@up.edu.ph", "image": "Johnicky.jpg"},
@@ -486,7 +490,6 @@ elif st.session_state.current_page == "About Us":
         {"name": "Lynus Aio Miguel de Torres", "email": "lndetorres@up.edu.ph", "image": "Lynus.jpg"},
     ]
     
-    # Define the base path for images
     image_base_path = Path("About Us")
     
     for i, col in enumerate(cols):
@@ -495,13 +498,10 @@ elif st.session_state.current_page == "About Us":
             full_img_path = str(image_base_path / img_filename)
             
             try:
-                # Render image WITHOUT the built-in caption
                 st.image(full_img_path, use_container_width=True)
             except Exception:
-                # Fallback in case the image file is not found
                 st.error(f"Missing {img_filename}")
                 
-            # Render name and email tightly grouped using Markdown/HTML
             st.markdown(f"""
                 <div style="text-align: center; margin-top: 8px;">
                     <p style="margin-bottom: 2px; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
