@@ -186,8 +186,6 @@ elif st.session_state.current_page == "Findings":
 
     try:
         df = fetch_clean_student_data()
-
-        # We no longer drop ALL NAs globally to prevent the dataframe from emptying out completely.
         df_clean = df.copy()
 
         subsection = st.selectbox(
@@ -210,6 +208,7 @@ elif st.session_state.current_page == "Findings":
                             if c in df.columns]
             if numeric_cols:
                 st.dataframe(df[numeric_cols].describe().T, use_container_width=True)
+                st.info("💡 **Interpretation:** [Add insights about averages, minimums, maximums, and standard deviations here.]")
 
             st.write("#### Categorical Variables Overview (Frequency Distributions)")
             cat_cols = [c for c in
@@ -222,6 +221,7 @@ elif st.session_state.current_page == "Findings":
                 with cols[i % 3]:
                     st.write(f"**{col}**")
                     st.dataframe(df[col].value_counts(), use_container_width=True)
+            st.info("💡 **Interpretation:** [Add observations about the most common demographics or categories in the dataset here.]")
 
         # 2. UNIVARIATE ANALYSIS
         elif subsection == "2. Univariate Analysis":
@@ -236,6 +236,7 @@ elif st.session_state.current_page == "Findings":
                     sns.histplot(plot_df['Total Score'], kde=True, color='#2E7D6B', ax=ax1)
                     ax1.set_xlabel("Total Score")
                     st.pyplot(fig1)
+                    st.info("💡 **Interpretation:** [Describe the shape of the distribution, e.g., normal, skewed, where the majority of scores lie, and if there are notable outliers.]")
 
             with col2:
                 st.write("#### Grade Distribution")
@@ -247,6 +248,7 @@ elif st.session_state.current_page == "Findings":
                     sns.countplot(data=plot_df, x='Grade', order=valid_order, color='#2E7D6B', ax=ax2)
                     ax2.set_xlabel("Grade")
                     st.pyplot(fig2)
+                    st.info("💡 **Interpretation:** [Discuss which grades are most common, the overall pass/fail ratio, and what this suggests about general student performance.]")
 
         # 3. BIVARIATE ANALYSIS
         elif subsection == "3. Bivariate Analysis":
@@ -264,7 +266,6 @@ elif st.session_state.current_page == "Findings":
                 fig, ax = plt.subplots(figsize=(8, 5))
 
                 if biv_option == "Gender vs Total Score" and 'Gender' in df_clean.columns:
-                    # Drop NAs ONLY for the specific columns we are plotting
                     plot_df = df_clean.dropna(subset=['Gender', 'Total Score'])
                     sns.boxplot(data=plot_df, x='Gender', y='Total Score', color='#2E7D6B', ax=ax)
                     st.write("#### How does Gender affect Total Score?")
@@ -280,6 +281,7 @@ elif st.session_state.current_page == "Findings":
                     st.write("#### Does Parental Education correlate with higher scores?")
 
                 st.pyplot(fig)
+                st.info(f"💡 **Interpretation:** [Provide insights on how the selected variable ({biv_option.split(' vs ')[0]}) impacts Total Score based on the plot medians, quartiles, and spread.]")
 
         # 4. CORRELATION ANALYSIS
         elif subsection == "4. Correlation Analysis":
@@ -297,6 +299,7 @@ elif st.session_state.current_page == "Findings":
                     fig, ax = plt.subplots(figsize=(6, 5))
                     sns.heatmap(corr_matrix, annot=True, cmap='crest', fmt='.2f', ax=ax, vmin=0, vmax=1)
                     st.pyplot(fig)
+                    st.info("💡 **Interpretation:** [Identify which scores are most strongly correlated. For example, do students who score high in reading also score high in writing based on the correlation coefficients?]")
 
                 with col2:
                     if 'Reading Score' in df_clean.columns and 'Writing Score' in df_clean.columns:
@@ -306,6 +309,7 @@ elif st.session_state.current_page == "Findings":
                         sns.scatterplot(data=plot_df, x='Reading Score', y='Writing Score', alpha=0.3, color="#2E7D6B",
                                         ax=ax2)
                         st.pyplot(fig2)
+                        st.info("💡 **Interpretation:** [Explain the trend seen in the scatterplot. E.g., a tight upward cluster indicates a strong positive relationship between Reading and Writing skills.]")
 
         # 5. PREDICTIVE MODELING
         elif subsection == "5. Predictive Modeling":
@@ -318,7 +322,6 @@ elif st.session_state.current_page == "Findings":
                 desired_features = ['Gender', 'Test Preparation', 'Race/Ethnicity', 'Parental Education']
                 features = [f for f in desired_features if f in df_clean.columns]
 
-                # Clean dataframe specifically for the ML model to avoid blank rows
                 ml_df = df_clean.dropna(subset=['Grade'] + features).copy()
                 ml_df['Is_A_Grade'] = ml_df['Grade'].apply(lambda x: 1 if x == 'A' else 0)
 
@@ -345,6 +348,7 @@ elif st.session_state.current_page == "Findings":
                         st.write("**Target:** Predicting 'Grade A'")
                         st.write("**Model Used:** Random Forest Classifier")
                         st.write(f"**Features Used:** {', '.join(features)}")
+                        st.info("💡 **Model Interpretation:** [Briefly explain if this accuracy means the model is highly reliable or just moderately predictive given the chosen features.]")
 
                     with col2:
                         st.write("#### Top Predictive Features")
@@ -357,6 +361,7 @@ elif st.session_state.current_page == "Findings":
                         ax.set_xlabel("Importance Score")
                         ax.set_ylabel("")
                         st.pyplot(fig)
+                        st.info("💡 **Feature Interpretation:** [Explain which demographic or preparation factors carry the most weight in predicting an 'A' grade according to the model.]")
 
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_performance_10k.csv' is saved in the 'Dataset' folder.")
