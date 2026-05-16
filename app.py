@@ -39,11 +39,11 @@ CUSTOM_CSS = """
     .stApp a { color: var(--accent-deep); }
     hr { border-color: var(--border-soft) !important; margin: 6px 0 14px 0 !important; }
     
-    /* --- Hide Default Streamlit Elements ---
+    /* --- Hide Default Streamlit Elements --- */
     [data-testid="stHeader"], 
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
-    [data-testid="stStatusWidget"] { display: none !important; } */
+    [data-testid="stStatusWidget"] { display: none !important; }
 
     /* --- Layout Padding Resets --- */
     [data-testid="stAppViewContainer"], 
