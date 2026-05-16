@@ -208,7 +208,6 @@ elif st.session_state.current_page == "Findings":
                             if c in df.columns]
             if numeric_cols:
                 st.dataframe(df[numeric_cols].describe().T, use_container_width=True)
-                st.info("💡 **Interpretation:** [Add insights about averages, minimums, maximums, and standard deviations here.]")
 
             st.write("#### Categorical Variables Overview (Frequency Distributions)")
             cat_cols = [c for c in
@@ -221,7 +220,6 @@ elif st.session_state.current_page == "Findings":
                 with cols[i % 3]:
                     st.write(f"**{col}**")
                     st.dataframe(df[col].value_counts(), use_container_width=True)
-            st.info("💡 **Interpretation:** [Add observations about the most common demographics or categories in the dataset here.]")
 
         # 2. UNIVARIATE ANALYSIS
         elif subsection == "2. Univariate Analysis":
