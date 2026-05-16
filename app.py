@@ -429,17 +429,34 @@ elif st.session_state.current_page == "About Us":
     st.write("Meet the team behind this analysis application.")
 
     cols = st.columns(5)
+    
+    # Added explicit image filenames to match exactly
     members = [
-        {"name": "Gerard Emmanuel Bernabe", "email": "gmbernabe@up.edu.ph"},
-        {"name": "Johnicky Benedict Salvador", "email": "jesalvador@up.edu.ph"},
-        {"name": "Lance Emerson Arreza", "email": "lnarreza@up.edu.ph"},
-        {"name": "Leo Shane Rubino", "email": "lfrubino@up.edu.ph"},
-        {"name": "Lynus Aio Miguel de Torres", "email": "lndetorres@up.edu.ph"},
+        {"name": "Gerard Emmanuel Bernabe", "email": "gmbernabe@up.edu.ph", "image": "Gerard.jpg"},
+        {"name": "Johnicky Benedict Salvador", "email": "jesalvador@up.edu.ph", "image": "Johnicky.jpg"},
+        {"name": "Lance Emerson Arreza", "email": "lnarreza@up.edu.ph", "image": "Lance.jpg"},
+        {"name": "Leo Shane Rubino", "email": "lfrubino@up.edu.ph", "image": "Leo.jpg"},
+        {"name": "Lynus Aio Miguel de Torres", "email": "lndetorres@up.edu.ph", "image": "Lynus.jpg"},
     ]
+    
+    # Define the base path for images
+    image_base_path = Path("About Us")
+    
     for i, col in enumerate(cols):
         with col:
-            st.image("https://via.placeholder.com/200", caption="Profile Picture", use_container_width=True)
-            st.markdown(f"**{members[i]['name']}**")
+            # Use the exact filename from the dictionary
+            img_filename = members[i]["image"]
+            full_img_path = str(image_base_path / img_filename)
+            
+            try:
+                # Render image with name as caption
+                st.image(full_img_path, caption=members[i]['name'], use_container_width=True)
+            except Exception:
+                # Fallback in case the image file is not found
+                st.error(f"Missing {img_filename}")
+                st.caption(members[i]['name'])
+                
+            # Render email below the image/caption
             st.caption(members[i]["email"])
-
+            
 st.markdown('</div>', unsafe_allow_html=True)
