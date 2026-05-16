@@ -57,14 +57,15 @@ CUSTOM_CSS = """
         max-width: 100% !important; 
     }
 
-    /* ========================================= */
+ /* ========================================= */
     /* --- STRICT CUSTOM TOP NAVIGATION MENU --- */
     /* ========================================= */
     
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) { 
         position: sticky; top: 0; z-index: 999; 
         background-color: var(--nav-bg); 
-        padding: 4px 20px !important; 
+        /* 0px top and bottom padding to make the bar as slim as possible */
+        padding: 0px 20px !important; 
         border-bottom: 1px solid var(--nav-border); 
         border-radius: 8px; 
         gap: 16px !important; 
@@ -76,23 +77,21 @@ CUSTOM_CSS = """
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         margin-top: 0 !important;
+        margin-bottom: 0 !important;
     }
 
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
 
-    /* Kill default Streamlit image margins ONLY inside the nav */
-    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] { 
+    /* Aggressively kill default Streamlit image wrappers and margins */
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"],
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] > img,
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] > div { 
         margin: 0 !important; 
         padding: 0 !important; 
         display: flex; 
         align-items: center; 
         justify-content: center; 
-    }
-    
-    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) img { 
-        margin: 0 !important; 
-        padding: 0 !important; 
     }
 
     .nav-logo { 
@@ -101,7 +100,7 @@ CUSTOM_CSS = """
         background-color: var(--accent-strong); color: var(--nav-bg); 
         font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; flex-shrink: 0; 
     }
-
+    
     /* --- Streamlit Radio Button Overrides (Menu Tabs) --- */
     [data-testid="stRadio"] { margin: 0 !important; padding: 0 !important; }
     [data-testid="stRadio"] div[role="radiogroup"] { display: flex; justify-content: flex-start; align-items: center; gap: 28px; padding: 0 !important; min-height: 0 !important; }
@@ -195,7 +194,7 @@ with logo_col:
     
     logo_path = Path(__file__).parent / "Images" / "Logo.png"
     if logo_path.exists():
-        st.image(str(logo_path), width=40)
+        st.image(str(logo_path), width=60)
     else:
         st.markdown('<div class="nav-logo">LOGO</div>', unsafe_allow_html=True)
 
