@@ -38,7 +38,7 @@ CUSTOM_CSS = """
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 { color: var(--text-primary); }
     .stApp a { color: var(--accent-deep); }
     hr { border-color: var(--border-soft) !important; margin: 6px 0 14px 0 !important; }
-    
+
     /* --- Hide Default Streamlit Elements --- */
     [data-testid="stHeader"], 
     [data-testid="stToolbar"], 
@@ -157,6 +157,7 @@ if 'current_page' not in st.session_state:
 def go_to_findings():
     st.session_state.current_page = "Findings"
 
+
 menu_options = ["Home", "Findings", "Resources", "About Us"]
 logo_col, menu_col, _spacer = st.columns([1, 10, 1], vertical_alignment="center")
 
@@ -237,7 +238,8 @@ elif st.session_state.current_page == "Findings":
                     sns.histplot(plot_df['Total Score'], kde=True, color='#2E7D6B', ax=ax1)
                     ax1.set_xlabel("Total Score")
                     st.pyplot(fig1)
-                    st.info("💡 **Interpretation:** [Describe the shape of the distribution, e.g., normal, skewed, where the majority of scores lie, and if there are notable outliers.]")
+                    st.info(
+                        "💡 **Interpretation:** [Describe the shape of the distribution, e.g., normal, skewed, where the majority of scores lie, and if there are notable outliers.]")
 
             with col2:
                 st.write("#### Grade Distribution")
@@ -249,7 +251,8 @@ elif st.session_state.current_page == "Findings":
                     sns.countplot(data=plot_df, x='Grade', order=valid_order, color='#2E7D6B', ax=ax2)
                     ax2.set_xlabel("Grade")
                     st.pyplot(fig2)
-                    st.info("💡 **Interpretation:** [Discuss which grades are most common, the overall pass/fail ratio, and what this suggests about general student performance.]")
+                    st.info(
+                        "💡 **Interpretation:** [Discuss which grades are most common, the overall pass/fail ratio, and what this suggests about general student performance.]")
 
         # 3. BIVARIATE ANALYSIS
         elif subsection == "3. Bivariate Analysis":
@@ -282,7 +285,8 @@ elif st.session_state.current_page == "Findings":
                     st.write("#### Does Parental Education correlate with higher scores?")
 
                 st.pyplot(fig)
-                st.info(f"💡 **Interpretation:** [Provide insights on how the selected variable ({biv_option.split(' vs ')[0]}) impacts Total Score based on the plot medians, quartiles, and spread.]")
+                st.info(
+                    f"💡 **Interpretation:** [Provide insights on how the selected variable ({biv_option.split(' vs ')[0]}) impacts Total Score based on the plot medians, quartiles, and spread.]")
 
         # 4. CORRELATION ANALYSIS
         elif subsection == "4. Correlation Analysis":
@@ -300,7 +304,8 @@ elif st.session_state.current_page == "Findings":
                     fig, ax = plt.subplots(figsize=(6, 5))
                     sns.heatmap(corr_matrix, annot=True, cmap='crest', fmt='.2f', ax=ax, vmin=0, vmax=1)
                     st.pyplot(fig)
-                    st.info("💡 **Interpretation:** [Identify which scores are most strongly correlated. For example, do students who score high in reading also score high in writing based on the correlation coefficients?]")
+                    st.info(
+                        "💡 **Interpretation:** [Identify which scores are most strongly correlated. For example, do students who score high in reading also score high in writing based on the correlation coefficients?]")
 
                 with col2:
                     if 'Reading Score' in df_clean.columns and 'Writing Score' in df_clean.columns:
@@ -310,7 +315,8 @@ elif st.session_state.current_page == "Findings":
                         sns.scatterplot(data=plot_df, x='Reading Score', y='Writing Score', alpha=0.3, color="#2E7D6B",
                                         ax=ax2)
                         st.pyplot(fig2)
-                        st.info("💡 **Interpretation:** [Explain the trend seen in the scatterplot. E.g., a tight upward cluster indicates a strong positive relationship between Reading and Writing skills.]")
+                        st.info(
+                            "💡 **Interpretation:** [Explain the trend seen in the scatterplot. E.g., a tight upward cluster indicates a strong positive relationship between Reading and Writing skills.]")
 
         # 5. PREDICTIVE MODELING
         elif subsection == "5. Predictive Modeling":
@@ -349,7 +355,8 @@ elif st.session_state.current_page == "Findings":
                         st.write("**Target:** Predicting 'Grade A'")
                         st.write("**Model Used:** Random Forest Classifier")
                         st.write(f"**Features Used:** {', '.join(features)}")
-                        st.info("💡 **Model Interpretation:** [Briefly explain if this accuracy means the model is highly reliable or just moderately predictive given the chosen features.]")
+                        st.info(
+                            "💡 **Model Interpretation:** [Briefly explain if this accuracy means the model is highly reliable or just moderately predictive given the chosen features.]")
 
                     with col2:
                         st.write("#### Top Predictive Features")
@@ -362,7 +369,8 @@ elif st.session_state.current_page == "Findings":
                         ax.set_xlabel("Importance Score")
                         ax.set_ylabel("")
                         st.pyplot(fig)
-                        st.info("💡 **Feature Interpretation:** [Explain which demographic or preparation factors carry the most weight in predicting an 'A' grade according to the model.]")
+                        st.info(
+                            "💡 **Feature Interpretation:** [Explain which demographic or preparation factors carry the most weight in predicting an 'A' grade according to the model.]")
 
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_performance_10k.csv' is saved in the 'Dataset' folder.")
@@ -382,60 +390,66 @@ elif st.session_state.current_page == "Resources":
         # 2. Expander for all categorical filters
         with st.expander("📊 Filter Data by Categories (Leave empty to show all)", expanded=True):
             col1, col2, col3 = st.columns(3)
-            
+
             with col1:
                 if 'Grade' in df.columns:
                     unique_grades = sorted([g for g in df['Grade'].unique() if pd.notna(g)])
                     selected_grades = st.multiselect("Grade", options=unique_grades, default=[])
-                else: selected_grades = []
-                
+                else:
+                    selected_grades = []
+
                 if 'Gender' in df.columns:
                     unique_gender = sorted([g for g in df['Gender'].unique() if pd.notna(g)])
                     selected_gender = st.multiselect("Gender", options=unique_gender, default=[])
-                else: selected_gender = []
+                else:
+                    selected_gender = []
 
             with col2:
                 if 'Race/Ethnicity' in df.columns:
                     unique_race = sorted([g for g in df['Race/Ethnicity'].unique() if pd.notna(g)])
                     selected_race = st.multiselect("Race/Ethnicity", options=unique_race, default=[])
-                else: selected_race = []
-                
+                else:
+                    selected_race = []
+
                 if 'Lunch' in df.columns:
                     unique_lunch = sorted([g for g in df['Lunch'].unique() if pd.notna(g)])
                     selected_lunch = st.multiselect("Lunch", options=unique_lunch, default=[])
-                else: selected_lunch = []
+                else:
+                    selected_lunch = []
 
             with col3:
                 if 'Parental Education' in df.columns:
                     unique_pedu = sorted([g for g in df['Parental Education'].unique() if pd.notna(g)])
                     selected_pedu = st.multiselect("Parental Education", options=unique_pedu, default=[])
-                else: selected_pedu = []
-                
+                else:
+                    selected_pedu = []
+
                 if 'Test Preparation' in df.columns:
                     unique_prep = sorted([g for g in df['Test Preparation'].unique() if pd.notna(g)])
                     selected_prep = st.multiselect("Test Preparation", options=unique_prep, default=[])
-                else: selected_prep = []
+                else:
+                    selected_prep = []
 
         # 3. Apply Filters to the Dataframe
         if search_query and 'Student Number' in filtered_df.columns:
             filtered_df = filtered_df[
                 filtered_df['Student Number'].astype(str).str.contains(search_query, case=False, na=False)]
-        
+
         if selected_grades and 'Grade' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Grade'].isin(selected_grades)]
-            
+
         if selected_gender and 'Gender' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Gender'].isin(selected_gender)]
-            
+
         if selected_race and 'Race/Ethnicity' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Race/Ethnicity'].isin(selected_race)]
-            
+
         if selected_lunch and 'Lunch' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Lunch'].isin(selected_lunch)]
-            
+
         if selected_pedu and 'Parental Education' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Parental Education'].isin(selected_pedu)]
-            
+
         if selected_prep and 'Test Preparation' in filtered_df.columns:
             filtered_df = filtered_df[filtered_df['Test Preparation'].isin(selected_prep)]
 
@@ -480,7 +494,7 @@ elif st.session_state.current_page == "About Us":
     st.write("Meet the team behind this analysis application.")
 
     cols = st.columns(5)
-    
+
     members = [
         {"name": "Gerard Emmanuel Bernabe", "email": "gmbernabe@up.edu.ph", "image": "Gerard.jpg"},
         {"name": "Johnicky Benedict Salvador", "email": "jesalvador@up.edu.ph", "image": "Johnicky.jpg"},
@@ -488,22 +502,22 @@ elif st.session_state.current_page == "About Us":
         {"name": "Leo Shane Rubino", "email": "lfrubino@up.edu.ph", "image": "Leo.jpg"},
         {"name": "Lynus Aio Miguel de Torres", "email": "lndetorres@up.edu.ph", "image": "Lynus.jpg"},
     ]
-    
+
     # Define the base path for images
     image_base_path = Path("About Us")
-    
+
     for i, col in enumerate(cols):
         with col:
             img_filename = members[i]["image"]
             full_img_path = str(image_base_path / img_filename)
-            
+
             try:
                 # Render image WITHOUT the built-in caption
                 st.image(full_img_path, use_container_width=True)
             except Exception:
                 # Fallback in case the image file is not found
                 st.error(f"Missing {img_filename}")
-                
+
             # Render name and email tightly grouped using Markdown/HTML
             st.markdown(f"""
                 <div style="text-align: center; margin-top: 8px;">
