@@ -72,8 +72,9 @@ CUSTOM_CSS = """
         align-items: center !important;
     }
     
-    /* Strip invisible padding from internal nav columns */
-    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) > div[data-testid="column"] > div {
+  /* Strip invisible padding from internal nav columns AND Streamlit's element containers */
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) > div[data-testid="column"] > div,
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) .element-container {
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         margin-top: 0 !important;
@@ -83,15 +84,21 @@ CUSTOM_CSS = """
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
 
-    /* Aggressively kill default Streamlit image wrappers and margins */
+    /* Aggressively kill default Streamlit image wrappers and NUDGE LOGO UP */
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"],
-    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] > img,
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) [data-testid="stImage"] > div { 
         margin: 0 !important; 
         padding: 0 !important; 
         display: flex; 
         align-items: center; 
         justify-content: center; 
+        /* Tweak this negative value (-4px, -6px, etc.) to shift the logo perfectly up or down */
+        transform: translateY(-4px); 
+    }
+    
+    div[data-testid="stHorizontalBlock"]:has(.nav-anchor) img { 
+        margin: 0 !important; 
+        padding: 0 !important; 
     }
 
     .nav-logo { 
