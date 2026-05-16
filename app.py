@@ -38,7 +38,7 @@ CUSTOM_CSS = """
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 { color: var(--text-primary); }
     .stApp a { color: var(--accent-deep); }
     hr { border-color: var(--border-soft) !important; margin: 6px 0 14px 0 !important; }
-
+    
     /* --- Hide Default Streamlit Elements --- */
     [data-testid="stHeader"], 
     [data-testid="stToolbar"], 
@@ -57,61 +57,29 @@ CUSTOM_CSS = """
         max-width: 100% !important; 
     }
 
-/* --- Custom Top Navigation Menu (HEIGHT FIXES) --- */
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo), 
-    div[data-testid="stHorizontalBlock"]:has([data-testid="stImage"]) { 
+    /* --- Custom Top Navigation Menu --- */
+    div[data-testid="stHorizontalBlock"]:has(.nav-logo) { 
         position: sticky; top: 0; z-index: 999; 
-        background-color: var(--nav-bg); 
-        /* Added 12px padding to top and bottom to give the logo breathing room */
-        padding: 12px 20px !important; 
-        border-bottom: 1px solid var(--nav-border); 
-        border-radius: 8px; 
-        gap: 16px !important; 
-        align-items: center !important;
-        /* Removed hardcoded height so it wraps perfectly around the padded logo */
+        background-color: var(--nav-bg); padding: 10px 16px; 
+        border-bottom: 1px solid var(--nav-border); border-radius: 8px; gap: 12px !important; 
     }
-    
-    /* Strip invisible padding from internal columns */
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) > div[data-testid="column"] > div,
-    div[data-testid="stHorizontalBlock"]:has([data-testid="stImage"]) > div[data-testid="column"] > div {
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-    }
-
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"],
-    div[data-testid="stHorizontalBlock"]:has([data-testid="stImage"]) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
-    
-    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"]:last-child,
-    div[data-testid="stHorizontalBlock"]:has([data-testid="stImage"]) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
-
-    /* Kill default Streamlit image margins */
-    div[data-testid="stHorizontalBlock"] [data-testid="stImage"] { margin-bottom: 0 !important; display: flex; align-items: center; justify-content: center; }
-    div[data-testid="stHorizontalBlock"] img { margin-bottom: 0 !important; }
+    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"] { width: auto !important; flex: 0 0 auto !important; }
+    div[data-testid="stHorizontalBlock"]:has(.nav-logo) [data-testid="stColumn"]:last-child { flex: 1 1 auto !important; }
 
     .nav-logo { 
         display: flex; align-items: center; justify-content: center; 
-        width: 32px; height: 32px; border-radius: 50%; 
+        width: 36px; height: 36px; border-radius: 50%; 
         background-color: var(--accent-strong); color: var(--nav-bg); 
         font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; flex-shrink: 0; 
     }
 
     /* --- Streamlit Radio Button Overrides (Menu Tabs) --- */
     [data-testid="stRadio"] { margin: 0 !important; padding: 0 !important; }
-    [data-testid="stRadio"] div[role="radiogroup"] { 
-        display: flex; justify-content: flex-start; align-items: center; 
-        gap: 28px; padding: 0 !important; min-height: 0 !important; 
-        margin-bottom: 0 !important; /* Prevent text from pushing height */
-    }
+    [data-testid="stRadio"] div[role="radiogroup"] { display: flex; justify-content: flex-start; align-items: center; gap: 28px; padding: 0 !important; min-height: 0 !important; }
     [data-testid="stRadio"] div[role="radiogroup"] label svg, 
     [data-testid="stRadio"] div[role="radiogroup"] label > div:first-child { display: none !important; }
-    [data-testid="stRadio"] div[role="radiogroup"] label { 
-        background: transparent !important; padding: 0 !important; margin: 0 !important; 
-        min-height: 0 !important; position: relative; margin-bottom: 0 !important;
-    }
-    [data-testid="stRadio"] div[role="radiogroup"] label p { 
-        font-size: 0.95rem; color: var(--nav-text); margin: 0; padding: 4px 0; 
-        transition: color 0.2s ease; line-height: 1; /* Keep text tight */
-    }
+    [data-testid="stRadio"] div[role="radiogroup"] label { background: transparent !important; padding: 0 !important; margin: 0 !important; min-height: 0 !important; position: relative; }
+    [data-testid="stRadio"] div[role="radiogroup"] label p { font-size: 0.95rem; color: var(--nav-text); margin: 0; padding: 4px 0; transition: color 0.2s ease; }
 
     /* Menu Underline Animation */
     [data-testid="stRadio"] div[role="radiogroup"] label p::after { 
