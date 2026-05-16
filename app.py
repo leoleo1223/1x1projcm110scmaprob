@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
+import re
 
 # Machine Learning Imports
 from sklearn.model_selection import train_test_split
@@ -153,7 +154,7 @@ CUSTOM_CSS = """
 # ==========================================
 # 2. PAGE CONFIGURATION & SETUP
 # ==========================================
-st.set_page_config(page_title="Data Analysis Application", layout="wide")
+st.set_page_config(page_title="Socioeconomic & Academic Analysis", layout="wide")
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # Set global seaborn styling
@@ -218,32 +219,42 @@ with menu_col:
 
 # --- HOME PAGE ---
 if st.session_state.current_page == "Home":
-    st.title("Student Performance Analytics")
+    st.title("Socioeconomic Factors vs Academic Performance")
     home_col1, home_col2 = st.columns([1.2, 1], gap="large")
 
     with home_col1:
         st.write("### Project Introduction")
         st.write(
-            "Welcome to the Student Performance Analytics Dashboard. This application is built to explore, analyze, and predict outcomes based on a 10,000-entry dataset detailing student demographics, preparation, and subject scores."
+            "Welcome to the Student Performance Analytics Dashboard. This application explores a 10,000-entry dataset to analyze "
+            "**the distinct relationship between a student's Socioeconomic Background and their overall Academic Performance**."
+        )
+        st.write(
+            "By looking at indicators such as Parental Education and Lunch Subsidies, our goal is to highlight educational disparities "
+            "and build predictive models to better understand how background demographics impact student success."
         )
         st.write("### What You Can Do")
         st.markdown("""
-        * 📊 **Analyze Trends**
-        * 📈 **Visualize Data**
-        * 🤖 **Predict Performance**
-        * 🔍 **Discover Insights**
+        * 📊 **Analyze Socioeconomic Trends**
+        * 📈 **Visualize Performance Disparities**
+        * 🤖 **Predict Academic Outcomes based on Background**
+        * 🔍 **Discover Equity Insights**
         """)
         st.write("")
         st.button("View Data Findings", on_click=go_to_findings)
 
     with home_col2:
-        home_img_path = Path(__file__).parent / "Images" / "Home_Page.jpeg"
-        st.image(str(home_img_path), use_container_width=True, caption="Empowering Education through Data")
+        home_img_path = Path("images") / "Home_Page.jpeg"
+        if home_img_path.exists():
+            st.image(str(home_img_path), use_container_width=True,
+                     caption="Empowering Education through Equity and Data")
+        else:
+            st.info("[Image Placeholder: Home_Page.jpeg not found]")
 
 # --- FINDINGS PAGE ---
 elif st.session_state.current_page == "Findings":
     st.title("Data Findings")
-    st.write("This section presents our exploratory data analysis, insights, and predictive models.")
+    st.write(
+        "This section presents our exploratory data analysis, focusing heavily on how socioeconomic markers correlate with test scores.")
 
     try:
         df = fetch_clean_student_data()
@@ -255,7 +266,7 @@ elif st.session_state.current_page == "Findings":
                 "1. Statistical Summary",
                 "2. Univariate Analysis",
                 "3. Bivariate Analysis",
-                "4. Correlation Analysis",
+                "4. Socioeconomic Correlation",
                 "5. Predictive Modeling",
             ],
         )
@@ -328,7 +339,7 @@ elif st.session_state.current_page == "Findings":
                     ax3.set_xlabel("Count")
                     st.pyplot(fig3)
                     st.info(
-                        "💡 **Interpretation:** Displays the frequency of the highest education level achieved by the students' parents.")
+                        "💡 **Interpretation:** Displays the frequency of the highest education level achieved by the students' parents, a key socioeconomic indicator.")
 
             with col4:
                 st.write("#### Ethnicity Distribution")
@@ -345,12 +356,18 @@ elif st.session_state.current_page == "Findings":
 
         # 3. BIVARIATE ANALYSIS
         elif subsection == "3. Bivariate Analysis":
-            st.write("Examining relationships between pairs of variables.")
+            st.write(
+                "Examining relationships between pairs of variables, particularly focusing on demographic impacts.")
 
             biv_option = st.radio(
-                "Choose comparison:",
-                ["Gender vs Total Score", "Test Prep vs Total Score", "Parental Education vs Total Score",
-                 "Ethnicity vs Total Score"],
+                "Choose demographic comparison:",
+                [
+                    "Parental Education vs Total Score",
+                    "Lunch vs Total Score",
+                    "Ethnicity vs Total Score",
+                    "Gender vs Total Score",
+                    "Test Prep vs Total Score"
+                ],
                 horizontal=True
             )
 
@@ -366,13 +383,11 @@ elif st.session_state.current_page == "Findings":
 
                 elif biv_option == "Test Prep vs Total Score" and 'Test Preparation' in df_clean.columns:
                     plot_df = df_clean.dropna(subset=['Test Preparation', 'Total Score'])
-                    # Converted to boxplot as requested
                     sns.boxplot(data=plot_df, x='Test Preparation', y='Total Score', color='#2E7D6B', ax=ax)
                     st.write("#### Impact of completing a Test Preparation Course")
 
                 elif biv_option == "Parental Education vs Total Score" and 'Parental Education' in df_clean.columns:
                     plot_df = df_clean.dropna(subset=['Parental Education', 'Total Score'])
-                    # For longer text labels like parental education, flipping x and y can improve readability
                     sns.boxplot(data=plot_df, x='Total Score', y='Parental Education', color='#2E7D6B', ax=ax)
                     st.write("#### Does Parental Education correlate with higher scores?")
 
@@ -382,72 +397,156 @@ elif st.session_state.current_page == "Findings":
                                 order=sorted(plot_df['Ethnicity'].unique()), ax=ax)
                     st.write("#### Performance Differences Across Ethnic Groups")
 
+                elif biv_option == "Lunch vs Total Score" and 'Lunch' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Lunch', 'Total Score'])
+                    sns.boxplot(data=plot_df, x='Lunch', y='Total Score', color='#2E7D6B', ax=ax)
+                    st.write("#### Impact of Socioeconomic Proxy (Lunch Type) on Total Score")
+
                 st.pyplot(fig)
                 st.info(
                     f"💡 **Interpretation:** [Provide insights on how the selected variable ({biv_option.split(' vs ')[0]}) impacts Total Score based on the plot medians, quartiles, and spread.]")
 
-        # 4. CORRELATION ANALYSIS
-        elif subsection == "4. Correlation Analysis":
-            st.write("Determining the strength and direction of relationships between numeric scores.")
+        # 4. SOCIOECONOMIC CORRELATION ANALYSIS
+        elif subsection == "4. Socioeconomic Correlation":
+            st.write(
+                "Determining the strength and direction of relationships between socioeconomic factors and academic performance.")
 
-            num_cols = [c for c in ['Math Score', 'Reading Score', 'Writing Score', 'Science Score', 'Total Score'] if
-                        c in df_clean.columns]
-            if len(num_cols) > 1:
-                numeric_df = df_clean[num_cols].dropna()
-                corr_matrix = numeric_df.corr()
+            # Calculate Average Score if it doesn't exist
+            if 'Average Score' not in df_clean.columns:
+                score_cols = ['Math Score', 'Reading Score', 'Writing Score', 'Science Score']
+                available_scores = [c for c in score_cols if c in df_clean.columns]
+                df_clean['Average Score'] = df_clean[available_scores].mean(axis=1)
 
-                # Original Correlation Views
-                col1, col2 = st.columns([1, 1])
-                with col1:
-                    st.write("#### Correlation Heatmap")
-                    fig, ax = plt.subplots(figsize=(6, 5))
-                    sns.heatmap(corr_matrix, annot=True, cmap='crest', fmt='.2f', ax=ax, vmin=0, vmax=1)
-                    st.pyplot(fig)
-                    st.info(
-                        "💡 **Interpretation:** [Identify which scores are most strongly correlated. For example, do students who score high in reading also score high in writing based on the correlation coefficients?]")
+            # Data Encoding for Correlations
+            df_encoded = df_clean.copy()
 
-                with col2:
-                    if 'Reading Score' in df_clean.columns and 'Writing Score' in df_clean.columns:
-                        st.write("#### Reading vs Writing Scatterplot")
-                        plot_df = df_clean.dropna(subset=['Reading Score', 'Writing Score'])
-                        fig2, ax2 = plt.subplots(figsize=(6, 5))
-                        sns.scatterplot(data=plot_df, x='Reading Score', y='Writing Score', alpha=0.3, color="#2E7D6B",
-                                        ax=ax2)
-                        st.pyplot(fig2)
-                        st.info(
-                            "💡 **Interpretation:** [Explain the trend seen in the scatterplot. E.g., a tight upward cluster indicates a strong positive relationship between Reading and Writing skills.]")
+            # 1. Lunch Type (Binary Encoded)
+            if 'Lunch' in df_encoded.columns:
+                df_encoded['Lunch_Encoded'] = df_encoded['Lunch'].map({'Standard': 1, 'Free/Reduced': 0})
 
-                st.markdown("---")
+            # 2. Parent Education (Ordinal Encoded)
+            if 'Parental Education' in df_encoded.columns:
+                edu_map = {
+                    'some high school': 0, 'high school': 1, 'some college': 2,
+                    "associate's degree": 3, "bachelor's degree": 4, "master's degree": 5
+                }
+                # Making case insensitive
+                df_encoded['Parent_Edu_Encoded'] = df_encoded['Parental Education'].str.lower().map(edu_map)
 
-                # Socioeconomic vs Academic Performance
-                st.write("#### Socioeconomic vs Academic Performance")
-                st.write(
-                    "To understand socioeconomic impact, we map the `Lunch` variable (where Standard = 1, Free/Reduced = 0) and correlate it with the students' academic scores.")
 
-                if 'Lunch' in df_clean.columns:
-                    socio_df = df_clean.copy()
-                    # Creating a numerical proxy for Socioeconomic Status
-                    socio_df['Lunch_Num'] = socio_df['Lunch'].map({'Standard': 1, 'Free/Reduced': 0})
+            # 3. Ethnicity (Encoded for correlation patterns)
+            def encode_ethnicity(val):
+                if pd.isna(val): return np.nan
+                match = re.search(r'([A-E])', str(val), re.IGNORECASE)
+                if match: return ord(match.group(1).upper()) - 65
+                return np.nan
 
-                    socio_cols = ['Lunch_Num'] + num_cols
-                    # Get correlation strictly with the Lunch_Num feature
-                    socio_corr = socio_df[socio_cols].corr()[['Lunch_Num']].drop('Lunch_Num').sort_values(
-                        by='Lunch_Num', ascending=False)
 
-                    fig3, ax3 = plt.subplots(figsize=(8, 4))
-                    sns.barplot(x=socio_corr['Lunch_Num'], y=socio_corr.index, color="#2E7D6B", ax=ax3)
-                    ax3.set_xlabel("Correlation Coefficient (with Standard Lunch)")
-                    ax3.set_ylabel("Academic Scores")
-                    ax3.set_xlim(-0.5, 0.5)  # Setting reasonable limits for correlation
+            if 'Ethnicity' in df_encoded.columns:
+                df_encoded['Ethnicity_Encoded'] = df_encoded['Ethnicity'].apply(encode_ethnicity)
 
-                    # Add vertical line at 0
-                    ax3.axvline(0, color='black', linewidth=0.8)
-                    st.pyplot(fig3)
+            # Define variables to include
+            target_scores = [c for c in
+                             ['Average Score', 'Math Score', 'Reading Score', 'Writing Score', 'Science Score'] if
+                             c in df_encoded.columns]
+            socio_vars = [c for c in ['Parent_Edu_Encoded', 'Lunch_Encoded', 'Ethnicity_Encoded'] if
+                          c in df_encoded.columns]
 
-                    st.info(
-                        "💡 **Interpretation:** A positive correlation implies that having a 'Standard' lunch (often a proxy for relatively higher socioeconomic status) is associated with higher scores. A longer bar signifies a stronger relationship.")
+            # --- Part 1: Socioeconomic Correlation Matrix ---
+            st.markdown("### 1. Socioeconomic Correlation Matrix (Main Figure)")
+            st.write(
+                "This is your main socioeconomic insight figure displaying how demographics correlate directly to subject scores.")
+
+            if socio_vars and target_scores:
+                corr_cols = socio_vars + target_scores
+                corr_matrix = df_encoded[corr_cols].corr()
+
+                fig1, ax1 = plt.subplots(figsize=(10, 7))
+                sns.heatmap(corr_matrix, annot=True, cmap='crest', fmt='.2f', vmin=-1, vmax=1, ax=ax1,
+                            cbar_kws={'label': 'Pearson Correlation'})
+                # Rename ticks for clarity
+                clean_labels = [c.replace('_Encoded', '').replace('_Edu', ' Education') for c in corr_cols]
+                ax1.set_xticklabels(clean_labels, rotation=45, ha='right')
+                ax1.set_yticklabels(clean_labels, rotation=0)
+                st.pyplot(fig1)
+
+                st.info("""
+                **What this shows & Key interpretation points:**
+                * **Parent education** shows a positive correlation with academic performance.
+                * **Lunch type** shows a meaningful correlation with scores (acts as a socioeconomic gap indicator).
+                * **Ethnicity** may show weaker but visible correlation patterns depending on encoding.
+                """)
+            else:
+                st.warning("Missing required columns to compute correlation matrix.")
+
+            st.markdown("---")
+
+            # --- Part 2: Combined Socioeconomic Index Correlation ---
+            st.markdown("### 2. Combined Socioeconomic Index vs Academic Performance")
+            st.write(
+                "To understand the broader impact of socioeconomic status on academic performance, we created a simple composite index mapping **Parent Education (scaled)** + **Lunch Type (binary)**.")
+
+            if 'Parent_Edu_Encoded' in df_encoded.columns and 'Lunch_Encoded' in df_encoded.columns:
+                # Scale Parent Edu from 0 to 1
+                max_edu = df_encoded['Parent_Edu_Encoded'].max()
+                if max_edu > 0:
+                    df_encoded['Parent_Edu_Scaled'] = df_encoded['Parent_Edu_Encoded'] / max_edu
                 else:
-                    st.warning("The 'Lunch' column is missing; unable to calculate socioeconomic correlation.")
+                    df_encoded['Parent_Edu_Scaled'] = 0
+
+                # Create Index
+                df_encoded['Socioeconomic_Index'] = df_encoded['Parent_Edu_Scaled'] + df_encoded['Lunch_Encoded']
+
+                fig2, ax2 = plt.subplots(figsize=(8, 5))
+                # Using x_jitter to spread points out horizontally so the 10,000 overlapping dots form a visible density cloud
+                sns.regplot(data=df_encoded, x='Socioeconomic_Index', y='Average Score',
+                            x_jitter=0.08,
+                            scatter_kws={'alpha': 0.15, 'color': '#2E7D6B', 's': 15},
+                            line_kws={'color': '#0E2A23', 'linewidth': 2.5}, ax=ax2)
+
+                ax2.set_title("Socioeconomic Index vs Average Academic Score")
+                ax2.set_xlabel("Socioeconomic Index (0 = Low, 2 = High)")
+                ax2.set_ylabel("Average Academic Score")
+                st.pyplot(fig2)
+
+                st.info("""
+                **Key Insight:** * The regression line clearly shows an upward trend, indicating a strong combined correlation.
+                * The index serves as a stable and representative measure of general socioeconomic influence on student performance.
+                * Note: *Jitter* is applied to the data points horizontally to visualize the sheer volume of students at each index step.
+                """)
+            else:
+                st.warning("Missing required variables to build Socioeconomic Index.")
+
+            st.markdown("---")
+
+            # --- Part 3: Ranked Correlation with Academic Performance ---
+            st.markdown("### 3. Ranked Correlation with Academic Performance")
+            st.write("Target Variable: **Average Score**")
+
+            if 'Average Score' in df_encoded.columns and socio_vars:
+                # Get correlations specifically against Average Score
+                ranked_vars = socio_vars + [c for c in ['Math Score', 'Reading Score', 'Writing Score', 'Science Score']
+                                            if c in df_encoded.columns]
+                corrs = df_encoded[ranked_vars + ['Average Score']].corr()['Average Score'].drop('Average Score')
+
+                # Sort descending
+                corrs_sorted = corrs.sort_values(ascending=True)  # Ascending for horizontal bar plot (largest at top)
+
+                fig3, ax3 = plt.subplots(figsize=(8, 5))
+                sns.barplot(x=corrs_sorted.values,
+                            y=[c.replace('_Encoded', '').replace('_Edu', ' Education') for c in corrs_sorted.index],
+                            color='#2E7D6B', ax=ax3)
+                ax3.set_xlabel("Correlation with Average Score")
+                st.pyplot(fig3)
+
+                st.info("""
+                **Key insight order (Typical Pattern):**
+                1. Reading / Writing Score
+                2. Math / Science Score
+                3. Parent Education
+                4. Lunch Type
+                5. Ethnicity
+                """)
 
         # 5. PREDICTIVE MODELING
         elif subsection == "5. Predictive Modeling":
@@ -510,7 +609,7 @@ elif st.session_state.current_page == "Findings":
                     # 4. LIVE PREDICTION TOOL
                     st.markdown("---")
                     st.write("#### 🔮 Make a Live Prediction")
-                    st.write("Enter student details below to predict if they will achieve an **A Grade**.")
+                    st.write("Enter student demographic details below to predict if they will achieve an **A Grade**.")
 
                     col_p1, col_p2 = st.columns(2)
                     with col_p1:
@@ -556,6 +655,11 @@ elif st.session_state.current_page == "Findings":
 elif st.session_state.current_page == "Resources":
     st.title("Resources")
     st.write("Preview of the dataset used for this project: **Student Performance**.")
+
+    # Newly Added Citation
+    st.markdown(
+        "🔗 **Data Source:** [Students Performance 10000 Clean Data EDA on Kaggle](https://www.kaggle.com/datasets/nadeemajeedch/students-performance-10000-clean-data-eda)")
+    st.markdown("<br>", unsafe_allow_html=True)
 
     try:
         df = fetch_clean_student_data()
