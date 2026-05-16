@@ -370,25 +370,70 @@ elif st.session_state.current_page == "Resources":
         df = fetch_clean_student_data()
         filtered_df = df.copy()
 
-        filter_col1, filter_col2 = st.columns([2, 3])
-        with filter_col1:
-            if 'Grade' in df.columns:
-                unique_grades = sorted([g for g in df['Grade'].unique() if pd.notna(g)])
-                selected_grades = st.multiselect("Filter by Grade (Leave empty to show all):", options=unique_grades,
-                                                 default=[])
-            else:
-                selected_grades = []
+        # 1. Search Bar at the top
+        search_query = st.text_input("Search by Student Number:", value="", placeholder="e.g., std-100")
 
-        with filter_col2:
-            search_query = st.text_input("Search by Student Number:", value="", placeholder="e.g., std-100")
+        # 2. Expander for all categorical filters
+        with st.expander("📊 Filter Data by Categories (Leave empty to show all)", expanded=True):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if 'Grade' in df.columns:
+                    unique_grades = sorted([g for g in df['Grade'].unique() if pd.notna(g)])
+                    selected_grades = st.multiselect("Grade", options=unique_grades, default=[])
+                else: selected_grades = []
+                
+                if 'Gender' in df.columns:
+                    unique_gender = sorted([g for g in df['Gender'].unique() if pd.notna(g)])
+                    selected_gender = st.multiselect("Gender", options=unique_gender, default=[])
+                else: selected_gender = []
 
-        if len(selected_grades) > 0 and 'Grade' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['Grade'].isin(selected_grades)]
+            with col2:
+                if 'Race/Ethnicity' in df.columns:
+                    unique_race = sorted([g for g in df['Race/Ethnicity'].unique() if pd.notna(g)])
+                    selected_race = st.multiselect("Race/Ethnicity", options=unique_race, default=[])
+                else: selected_race = []
+                
+                if 'Lunch' in df.columns:
+                    unique_lunch = sorted([g for g in df['Lunch'].unique() if pd.notna(g)])
+                    selected_lunch = st.multiselect("Lunch", options=unique_lunch, default=[])
+                else: selected_lunch = []
 
+            with col3:
+                if 'Parental Education' in df.columns:
+                    unique_pedu = sorted([g for g in df['Parental Education'].unique() if pd.notna(g)])
+                    selected_pedu = st.multiselect("Parental Education", options=unique_pedu, default=[])
+                else: selected_pedu = []
+                
+                if 'Test Preparation' in df.columns:
+                    unique_prep = sorted([g for g in df['Test Preparation'].unique() if pd.notna(g)])
+                    selected_prep = st.multiselect("Test Preparation", options=unique_prep, default=[])
+                else: selected_prep = []
+
+        # 3. Apply Filters to the Dataframe
         if search_query and 'Student Number' in filtered_df.columns:
             filtered_df = filtered_df[
                 filtered_df['Student Number'].astype(str).str.contains(search_query, case=False, na=False)]
+        
+        if selected_grades and 'Grade' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Grade'].isin(selected_grades)]
+            
+        if selected_gender and 'Gender' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Gender'].isin(selected_gender)]
+            
+        if selected_race and 'Race/Ethnicity' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Race/Ethnicity'].isin(selected_race)]
+            
+        if selected_lunch and 'Lunch' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Lunch'].isin(selected_lunch)]
+            
+        if selected_pedu and 'Parental Education' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Parental Education'].isin(selected_pedu)]
+            
+        if selected_prep and 'Test Preparation' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Test Preparation'].isin(selected_prep)]
 
+        # 4. Display Results
         st.caption(f"Showing {len(filtered_df)} of {len(df)} records")
         st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 
@@ -397,7 +442,7 @@ elif st.session_state.current_page == "Resources":
                            file_name="student_performance_filtered.csv", mime="text/csv")
 
         st.markdown("---")
-        with st.expander("📖 **Dataset Data Dictionary**", expanded=True):
+        with st.expander("📖 **Dataset Data Dictionary**", expanded=False):
             st.markdown("""
             Below is a breakdown of the columns available in the dataset and what they represent:
 
