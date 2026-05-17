@@ -145,7 +145,7 @@ if st.session_state.current_page == "Home":
         st.button("View Data Findings", on_click=go_to_findings)
 
     with home_col2:
-        home_img_path = Path("images") / "Home_Page.jpeg"
+        home_img_path = Path(__file__).parent / "Images" / "Home_Page.jpeg"
         if home_img_path.exists():
             st.image(str(home_img_path), use_container_width=True,
                      caption="Empowering Education through Equity and Data")
