@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-import re
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -65,36 +64,48 @@ st.set_page_config(page_title="Socioeconomic & Academic Analysis", layout="wide"
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 sns.set_theme(style="whitegrid", palette="crest")
 
-EDU_ORDER = ["Some High School", "High School", "Some College", "Associate's Degree", "Bachelor's Degree",
-             "Master's Degree"]
+EDU_ORDER = ["No Formal Education", "High School", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD"]
 
 
-@st.cache_data(show_spinner="Fetching and cleaning dataset...")
-def fetch_clean_student_data():
-    file_path = Path(__file__).parent / "Dataset" / "Student_performance_10k.csv"
+@st.cache_data(show_spinner="Loading dataset...")
+def load_student_data():
+    file_path = Path(__file__).parent / "Dataset" / "Student_Performance.csv"
     df = pd.read_csv(file_path)
-
-    def clean_ethnicity(val):
-        if pd.isna(val): return val
-        match = re.search(r'([A-E])', str(val), re.IGNORECASE)
-        if match: return f"Group {match.group(1).upper()}"
-        return val
-
-    if 'Ethnicity' in df.columns:
-        df['Ethnicity'] = df['Ethnicity'].apply(clean_ethnicity)
-    if 'Parental Education' in df.columns:
-        df['Parental Education'] = df['Parental Education'].str.title().str.replace("'S", "'s", regex=False)
-
-    if 'Math Score' in df.columns: df['Math Score'] = pd.to_numeric(df['Math Score'], errors='coerce')
-    if 'Total Score' in df.columns: df['Total Score'] = pd.to_numeric(df['Total Score'], errors='coerce')
-
-    map_dict = {1.0: 'Completed', 0.0: 'None', 1: 'Completed', 0: 'None', '1.0': 'Completed', '0.0': 'None'}
-    lunch_dict = {1.0: 'Standard', 0.0: 'Free/Reduced', 1: 'Standard', 0: 'Free/Reduced'}
-
-    if 'Test Preparation' in df.columns: df['Test Preparation'] = df['Test Preparation'].replace(map_dict)
-    if 'Lunch' in df.columns: df['Lunch'] = df['Lunch'].replace(lunch_dict)
-
+    df.columns = df.columns.str.strip()
     return df
+
+
+@st.cache_resource(show_spinner="Training Tuned Random Forest Classifier (One Time)...")
+def train_model(df_clean):
+    features_cat = [f for f in
+                    ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Travel Time', 'Extra Activities',
+                     'Study Method'] if f in df_clean.columns]
+    features_num = [f for f in ['Study Hours', 'Attendance Percentage'] if f in df_clean.columns]
+
+    ml_df = df_clean.dropna(subset=['Final Grade'] + features_cat + features_num).copy()
+
+    if ml_df.empty:
+        return None, None, None, None, None
+
+    X_cat = pd.get_dummies(ml_df[features_cat], drop_first=True)
+    X_num = ml_df[features_num]
+    X = pd.concat([X_cat, X_num], axis=1)
+    y = ml_df['Final Grade']
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    clf = RandomForestClassifier(
+        n_estimators=250,
+        max_depth=12,
+        min_samples_split=5,
+        class_weight='balanced',
+        random_state=42
+    )
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+
+    return clf, acc, X.columns, X_cat.columns, features_cat
 
 
 if 'current_page' not in st.session_state: st.session_state.current_page = "Home"
@@ -125,16 +136,16 @@ if st.session_state.current_page == "Home":
     with home_col1:
         st.write("### Project Introduction")
         st.write(
-            "Welcome to the Student Performance Analytics Dashboard. This application explores a 10,000-entry dataset to analyze **the distinct relationship between a student's Socioeconomic Background and their overall Academic Performance**.")
+            "Welcome to the Student Performance Analytics Dashboard. This application explores a vast dataset to analyze **the distinct relationship between a student's Socioeconomic Background, Study Behaviors, and their overall Academic Performance**.")
         st.write(
-            "By looking at indicators such as Parental Education and Lunch Subsidies, our goal is to highlight educational disparities and build predictive models to better understand how background demographics impact student success.")
+            "By looking at indicators such as Parental Education, Internet Access, Attendance, and Extracurricular Activities, our goal is to highlight educational disparities and build predictive models to better understand how background and behavior combined impact student success.")
         st.write("### What You Can Do")
         st.markdown(
             "* 📊 **Analyze Socioeconomic Trends:** Explore the distributions of student backgrounds.\n* 📈 **Visualize Performance Disparities:** Compare how different groups score on tests.\n* 🤖 **Predict Academic Outcomes:** Use machine learning to forecast grades based on demographics.\n* 🔍 **Discover Equity Insights:** Uncover which traits have the strongest impact on education.")
         st.button("View Data Findings", on_click=go_to_findings)
 
     with home_col2:
-        home_img_path = Path(__file__).parent / "Images" / "Home_Page.jpeg"
+        home_img_path = Path("images") / "Home_Page.jpeg"
         if home_img_path.exists():
             st.image(str(home_img_path), use_container_width=True,
                      caption="Empowering Education through Equity and Data")
@@ -148,7 +159,7 @@ elif st.session_state.current_page == "Findings":
         "This section presents our exploratory data analysis, focusing heavily on how socioeconomic markers correlate with test scores.")
 
     try:
-        df = fetch_clean_student_data()
+        df = load_student_data()
         df_clean = df.copy()
 
         subsection = st.selectbox(
@@ -164,13 +175,13 @@ elif st.session_state.current_page == "Findings":
                 "The Statistical Summary provides a high-level mathematical overview of our dataset. It computes averages, standard deviations, and quartiles for the numeric scores, while also giving us a precise headcount for all the demographic categories.")
 
             st.write("#### Numeric Variables Overview")
-            numeric_cols = [c for c in ['Math Score', 'Reading Score', 'Writing Score', 'Science Score', 'Total Score']
-                            if c in df.columns]
+            numeric_cols = [c for c in ['Age', 'Study Hours', 'Attendance Percentage', 'Math Score', 'Science Score',
+                                        'English Score', 'Overall Score'] if c in df.columns]
             if numeric_cols: st.dataframe(df[numeric_cols].describe().T, use_container_width=True)
 
             st.write("#### Categorical Variables Overview (Frequency Distributions)")
-            cat_cols = [c for c in ['Gender', 'Ethnicity', 'Parental Education', 'Lunch', 'Test Preparation', 'Grade']
-                        if c in df.columns]
+            cat_cols = [c for c in ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Travel Time',
+                                    'Extra Activities', 'Study Method', 'Final Grade'] if c in df.columns]
             c1, c2, c3 = st.columns(3)
             cols = [c1, c2, c3]
             for i, col in enumerate(cat_cols):
@@ -184,40 +195,40 @@ elif st.session_state.current_page == "Findings":
 
             col1, col2 = st.columns(2)
             with col1:
-                st.write("#### Total Score Distribution")
-                if 'Total Score' in df_clean.columns:
+                st.write("#### Overall Score Distribution")
+                if 'Overall Score' in df_clean.columns:
                     fig1, ax1 = plt.subplots(figsize=(6, 4))
-                    sns.histplot(df_clean['Total Score'].dropna(), kde=True, color='#2E7D6B', ax=ax1)
-                    ax1.set_xlabel("Total Score")
+                    sns.histplot(df_clean['Overall Score'].dropna(), kde=True, color='#2E7D6B', ax=ax1)
+                    ax1.set_xlabel("Overall Score")
                     st.pyplot(fig1)
 
             with col2:
-                st.write("#### Grade Distribution")
-                if 'Grade' in df_clean.columns:
-                    plot_df = df_clean.dropna(subset=['Grade'])
-                    valid_order = [g for g in ['A', 'B', 'C', 'D', 'Fail'] if g in plot_df['Grade'].unique()]
+                st.write("#### Final Grade Distribution")
+                if 'Final Grade' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Final Grade'])
+                    valid_order = [g for g in ['A', 'B', 'C', 'D', 'E', 'F'] if g in plot_df['Final Grade'].unique()]
                     fig2, ax2 = plt.subplots(figsize=(6, 4))
-                    sns.countplot(data=plot_df, x='Grade', order=valid_order, color='#2E7D6B', ax=ax2)
+                    sns.countplot(data=plot_df, x='Final Grade', order=valid_order, color='#2E7D6B', ax=ax2)
                     st.pyplot(fig2)
 
             st.markdown("---")
             col3, col4 = st.columns(2)
             with col3:
                 st.write("#### Parental Education Distribution")
-                if 'Parental Education' in df_clean.columns:
-                    plot_df = df_clean.dropna(subset=['Parental Education'])
+                if 'Parent Education' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Parent Education'])
                     fig3, ax3 = plt.subplots(figsize=(6, 4))
-                    sns.countplot(data=plot_df, y='Parental Education', color='#2E7D6B', order=EDU_ORDER, ax=ax3)
+                    sns.countplot(data=plot_df, y='Parent Education', color='#2E7D6B', order=EDU_ORDER, ax=ax3)
                     ax3.set_ylabel("")
                     st.pyplot(fig3)
 
             with col4:
-                st.write("#### Ethnicity Distribution")
-                if 'Ethnicity' in df_clean.columns:
-                    plot_df = df_clean.dropna(subset=['Ethnicity'])
+                st.write("#### Primary Study Method")
+                if 'Study Method' in df_clean.columns:
+                    plot_df = df_clean.dropna(subset=['Study Method'])
                     fig4, ax4 = plt.subplots(figsize=(6, 4))
-                    sns.countplot(data=plot_df, x='Ethnicity', color='#2E7D6B',
-                                  order=sorted(plot_df['Ethnicity'].unique()), ax=ax4)
+                    sns.countplot(data=plot_df, x='Study Method', color='#2E7D6B',
+                                  order=sorted(plot_df['Study Method'].unique()), ax=ax4)
                     st.pyplot(fig4)
 
         elif subsection == "3. Bivariate Analysis":
@@ -228,8 +239,8 @@ elif st.session_state.current_page == "Findings":
             with col_biv1:
                 biv_option = st.radio(
                     "Choose demographic comparison:",
-                    ["Parental Education vs Total Score", "Lunch vs Total Score", "Ethnicity vs Total Score",
-                     "Gender vs Total Score", "Test Preparation vs Total Score"],
+                    ["Parent Education vs Overall Score", "Internet Access vs Overall Score",
+                     "Study Method vs Overall Score", "Gender vs Overall Score", "Extra Activities vs Overall Score"],
                     horizontal=True
                 )
             with col_biv2:
@@ -241,32 +252,28 @@ elif st.session_state.current_page == "Findings":
 
             if df_clean.empty:
                 st.warning("Data is missing or empty.")
-            elif 'Total Score' in df_clean.columns:
+            elif 'Overall Score' in df_clean.columns:
                 fig, ax = plt.subplots(figsize=(8, 5))
                 x_col = biv_option.split(" vs ")[0]
 
                 if x_col in df_clean.columns:
-                    plot_df = df_clean.dropna(subset=[x_col, 'Total Score'])
+                    plot_df = df_clean.dropna(subset=[x_col, 'Overall Score'])
+                    order = EDU_ORDER if x_col == 'Parent Education' else None
 
-                    if x_col == 'Ethnicity':
-                        order = sorted(plot_df[x_col].unique())
-                    elif x_col == 'Parental Education':
-                        order = EDU_ORDER
-                    else:
-                        order = None
+                    st.write(f"#### Impact of {x_col} on Overall Score")
 
-                    st.write(f"#### Impact of {x_col} on Total Score")
-
-                    if x_col == 'Parental Education':
+                    if x_col == 'Parent Education':
                         if plot_type == "Violin Plot":
-                            sns.violinplot(data=plot_df, x='Total Score', y=x_col, color='#2E7D6B', order=order, ax=ax)
+                            sns.violinplot(data=plot_df, x='Overall Score', y=x_col, color='#2E7D6B', order=order,
+                                           ax=ax)
                         else:
-                            sns.boxplot(data=plot_df, x='Total Score', y=x_col, color='#2E7D6B', order=order, ax=ax)
+                            sns.boxplot(data=plot_df, x='Overall Score', y=x_col, color='#2E7D6B', order=order, ax=ax)
                     else:
                         if plot_type == "Violin Plot":
-                            sns.violinplot(data=plot_df, x=x_col, y='Total Score', color='#2E7D6B', order=order, ax=ax)
+                            sns.violinplot(data=plot_df, x=x_col, y='Overall Score', color='#2E7D6B', order=order,
+                                           ax=ax)
                         else:
-                            sns.boxplot(data=plot_df, x=x_col, y='Total Score', color='#2E7D6B', order=order, ax=ax)
+                            sns.boxplot(data=plot_df, x=x_col, y='Overall Score', color='#2E7D6B', order=order, ax=ax)
 
                     st.pyplot(fig)
 
@@ -290,21 +297,21 @@ elif st.session_state.current_page == "Findings":
 
             with tab1:
                 st.write(
-                    "**Click on any slice to expand it!** The **size** of the wedge shows how many students are in that group. The **color** represents their Average Total Score (Dark Red = Lowest, Dark Green = Highest). This clearly visualizes the performance gap between different lunch and education groups.")
+                    "**Click on any slice to expand it!** The **size** of the wedge shows how many students are in that group. The **color** represents their Average Overall Score (Dark Red = Lowest, Dark Green = Highest).")
                 if all(col in df_clean.columns for col in
-                       ['Parental Education', 'Lunch', 'Test Preparation', 'Total Score']):
+                       ['Parent Education', 'Internet Access', 'Study Method', 'Overall Score']):
                     df_sunburst = df_clean.dropna(
-                        subset=['Lunch', 'Parental Education', 'Test Preparation', 'Total Score'])
-                    df_agg = df_sunburst.groupby(['Lunch', 'Parental Education', 'Test Preparation'])[
-                        'Total Score'].agg(['mean', 'count']).reset_index()
+                        subset=['Internet Access', 'Parent Education', 'Study Method', 'Overall Score'])
+                    df_agg = df_sunburst.groupby(['Internet Access', 'Parent Education', 'Study Method'])[
+                        'Overall Score'].agg(['mean', 'count']).reset_index()
 
                     fig_sunburst = px.sunburst(
                         df_agg,
-                        path=['Lunch', 'Parental Education', 'Test Preparation'],
+                        path=['Internet Access', 'Parent Education', 'Study Method'],
                         values='count',
                         color='mean',
                         color_continuous_scale='RdYlGn',
-                        color_continuous_midpoint=df_clean['Total Score'].mean(),
+                        color_continuous_midpoint=df_clean['Overall Score'].mean(),
                         labels={'mean': 'Average Score', 'count': 'Number of Students'},
                         title="Interactive Socioeconomic Breakdown"
                     )
@@ -313,19 +320,19 @@ elif st.session_state.current_page == "Findings":
 
             with tab2:
                 st.write(
-                    "**Compare 'Academic Signatures'.** How do different Parental Education levels score across the four core subjects?")
+                    "**Compare 'Academic Signatures'.** How do different Parental Education levels score across core subjects?")
                 if all(col in df_clean.columns for col in
-                       ['Math Score', 'Reading Score', 'Writing Score', 'Science Score', 'Parental Education']):
-                    categories = ['Math Score', 'Reading Score', 'Writing Score', 'Science Score']
-                    df_radar = df_clean.groupby('Parental Education')[categories].mean().reset_index()
+                       ['Math Score', 'English Score', 'Science Score', 'Parent Education']):
+                    categories = ['Math Score', 'English Score', 'Science Score']
+                    df_radar = df_clean.groupby('Parent Education')[categories].mean().reset_index()
 
                     fig_radar = go.Figure()
                     for _, row in df_radar.iterrows():
                         fig_radar.add_trace(go.Scatterpolar(
-                            r=[row['Math Score'], row['Reading Score'], row['Writing Score'], row['Science Score']],
+                            r=[row['Math Score'], row['English Score'], row['Science Score']],
                             theta=categories,
                             fill='toself',
-                            name=row['Parental Education']
+                            name=row['Parent Education']
                         ))
 
                     fig_radar.update_layout(
@@ -339,13 +346,13 @@ elif st.session_state.current_page == "Findings":
 
             with tab3:
                 st.write(
-                    "**The direct Socioeconomic Split.** This split violin plot isolates Parental Education on the bottom axis, and groups the density distributions cleanly side-by-side by Lunch Type. It highlights the massive socioeconomic gap *within* the exact same education levels.")
-                if all(col in df_clean.columns for col in ['Parental Education', 'Total Score', 'Lunch']):
+                    "**The direct Socioeconomic Split.** This split violin plot isolates Parental Education on the bottom axis, and groups the density distributions cleanly side-by-side by Internet Access.")
+                if all(col in df_clean.columns for col in ['Parent Education', 'Overall Score', 'Internet Access']):
                     fig_split = px.violin(
-                        df_clean.dropna(subset=['Parental Education', 'Total Score', 'Lunch']),
-                        x='Parental Education', y='Total Score', color='Lunch',
-                        category_orders={"Parental Education": EDU_ORDER},
-                        title="Score Densities Grouped by Socioeconomic Proxy (Lunch)",
+                        df_clean.dropna(subset=['Parent Education', 'Overall Score', 'Internet Access']),
+                        x='Parent Education', y='Overall Score', color='Internet Access',
+                        category_orders={"Parent Education": EDU_ORDER},
+                        title="Score Densities Grouped by Internet Access",
                         box=True
                     )
                     fig_split.update_layout(violinmode='group', plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)',
@@ -356,47 +363,58 @@ elif st.session_state.current_page == "Findings":
             st.write(
                 "Correlation Analysis quantifies the mathematical relationship between multiple variables. By isolating specific traits using One-Hot Encoding, we can objectively measure which socioeconomic traits act as the strongest drivers of academic success, and which traits indicate a disadvantage.")
 
-            if 'Total Score' in df_clean.columns:
+            if 'Overall Score' in df_clean.columns:
                 st.markdown("### 1. Which Traits Impact Scores the Most?")
-                cat_cols = [c for c in ['Gender', 'Ethnicity', 'Parental Education', 'Lunch', 'Test Preparation'] if
-                            c in df_clean.columns]
+                cat_cols = [c for c in
+                            ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Extra Activities',
+                             'Study Method', 'Travel Time'] if c in df_clean.columns]
 
                 df_dummies = pd.get_dummies(df_clean[cat_cols].dropna())
-                df_corr_data = pd.concat([df_dummies, df_clean['Total Score']], axis=1).dropna()
-                trait_correlations = df_corr_data.corr()['Total Score'].drop('Total Score').sort_values()
+                df_corr_data = pd.concat([df_dummies, df_clean['Overall Score']], axis=1).dropna()
+                trait_correlations = df_corr_data.corr()['Overall Score'].drop('Overall Score').sort_values()
 
                 fig1, ax1 = plt.subplots(figsize=(10, 8))
                 colors = ['#C44E52' if x < 0 else '#2E7D6B' for x in trait_correlations.values]
                 clean_labels = [c.replace('_', ': ').title() for c in trait_correlations.index]
 
                 sns.barplot(x=trait_correlations.values, y=clean_labels, palette=colors, ax=ax1)
-                ax1.set_xlabel("Pearson Correlation with Total Score")
+                ax1.set_xlabel("Pearson Correlation with Overall Score")
                 ax1.axvline(0, color='black', linewidth=1)
                 st.pyplot(fig1)
                 st.info("💡 Green Bars correlate positively with higher scores. Red Bars correlate with lower scores.")
                 st.markdown("---")
 
-                st.markdown("### 2. The Compounding Effect of Socioeconomic Advantage")
-                df_adv = df_clean.copy().dropna(
-                    subset=['Lunch', 'Parental Education', 'Test Preparation', 'Total Score'])
+                st.markdown("### 2. The Compounding Effect of Advantage")
+                st.write(
+                    "In this analysis, an **'Advantage'** refers to a specific socioeconomic or behavioral trait that provides a statistical edge in a student's educational journey. For this model, we isolated three distinct advantages:")
+                st.markdown("""
+                * 🌐 **Technological Advantage:** Having active **Internet Access** at home.
+                * 🎓 **Educational Advantage:** Having parents with a higher education degree (**Bachelor's, Master's, or PhD**).
+                * 🏃 **Engagement Advantage:** Participating in **Extra Activities** outside of standard class time.
+                """)
+                st.write(
+                    "By calculating a 'Total Advantages' score (from 0 to 3) for each student, we can visualize the compounding nature of access and engagement. The chart below demonstrates how baseline academic performance shifts as students accumulate more of these advantages.")
 
-                df_adv['Adv_Lunch'] = (df_adv['Lunch'] == 'Standard').astype(int)
-                df_adv['Adv_Parent'] = df_adv['Parental Education'].isin(
-                    ["Bachelor's Degree", "Master's Degree"]).astype(int)
-                df_adv['Adv_Prep'] = (df_adv['Test Preparation'] == 'Completed').astype(int)
-                df_adv['Total Advantages'] = df_adv['Adv_Lunch'] + df_adv['Adv_Parent'] + df_adv['Adv_Prep']
+                df_adv = df_clean.copy().dropna(
+                    subset=['Internet Access', 'Parent Education', 'Extra Activities', 'Overall Score'])
+
+                df_adv['Adv_Internet'] = (df_adv['Internet Access'] == 'Yes').astype(int)
+                df_adv['Adv_Parent'] = df_adv['Parent Education'].isin(
+                    ["Bachelor's Degree", "Master's Degree", "PhD"]).astype(int)
+                df_adv['Adv_Extra'] = (df_adv['Extra Activities'] == 'Yes').astype(int)
+                df_adv['Total Advantages'] = df_adv['Adv_Internet'] + df_adv['Adv_Parent'] + df_adv['Adv_Extra']
 
                 fig2, ax2 = plt.subplots(figsize=(8, 5))
-                sns.boxplot(data=df_adv, x='Total Advantages', y='Total Score', palette="crest", ax=ax2)
+                sns.boxplot(data=df_adv, x='Total Advantages', y='Overall Score', palette="crest", ax=ax2)
                 ax2.set_xlabel("Number of Advantages (0 = None, 3 = All)")
-                ax2.set_ylabel("Total Academic Score")
+                ax2.set_ylabel("Overall Score")
                 st.pyplot(fig2)
                 st.info(
-                    "💡 The median score climbs steadily with each additional socioeconomic or support advantage a student has.")
+                    "💡 The median score climbs steadily with each additional socioeconomic or engagement advantage a student has.")
                 st.markdown("---")
 
                 st.markdown("### 3. Academic Synergies (Subject Correlations)")
-                score_cols = ['Math Score', 'Reading Score', 'Writing Score', 'Science Score']
+                score_cols = ['Math Score', 'English Score', 'Science Score']
                 available_scores = [c for c in score_cols if c in df_clean.columns]
 
                 if len(available_scores) > 1:
@@ -404,142 +422,156 @@ elif st.session_state.current_page == "Findings":
                     sns.heatmap(df_clean[available_scores].corr(), annot=True, cmap='crest', fmt='.2f', vmin=0.5,
                                 vmax=1, ax=ax3)
                     st.pyplot(fig3)
-                    st.info(
-                        "💡 Reading and Writing usually have the highest correlation, indicating literacy skills develop closely in tandem.")
+                    st.info("💡 Identifying the crossover dependencies between exact subjects.")
                 st.markdown("---")
 
                 st.markdown("### 4. Trait Impact by Individual Subject")
                 st.write("Correlating specific advantages directly with individual subject scores.")
-                if all(col in df_adv.columns for col in ['Adv_Lunch', 'Adv_Parent', 'Adv_Prep'] + available_scores):
-                    trait_subject_corr = df_adv[['Adv_Lunch', 'Adv_Parent', 'Adv_Prep'] + available_scores].corr()
+                if all(col in df_adv.columns for col in ['Adv_Internet', 'Adv_Parent', 'Adv_Extra'] + available_scores):
+                    trait_subject_corr = df_adv[['Adv_Internet', 'Adv_Parent', 'Adv_Extra'] + available_scores].corr()
                     trait_subject_corr = trait_subject_corr.loc[
-                        ['Adv_Lunch', 'Adv_Parent', 'Adv_Prep'], available_scores]
-                    trait_subject_corr.index = ['Standard Lunch', 'Parent Degree', 'Test Prep Completed']
+                        ['Adv_Internet', 'Adv_Parent', 'Adv_Extra'], available_scores]
+                    trait_subject_corr.index = ['Internet Access', 'Parent Degree', 'Extra Activities']
 
                     fig4, ax4 = plt.subplots(figsize=(8, 4))
                     sns.heatmap(trait_subject_corr, annot=True, cmap='crest', fmt='.2f', vmin=0, vmax=0.5, ax=ax4)
                     st.pyplot(fig4)
-                    st.info(
-                        "💡 Compare the columns to see which subject is most heavily influenced by each demographic trait.")
 
         elif subsection == "5. Predictive Modeling":
             st.write(
-                "Predictive Modeling uses historical data to train a machine learning algorithm. In this section, we use a **Random Forest Classifier** to learn complex patterns within the demographic data and predict whether a new student is likely to achieve an 'A' grade, without ever looking at their previous subject scores.")
+                "Predictive Modeling uses historical data to train a machine learning algorithm. We utilize an **Optimized Random Forest Classifier** to map complex patterns within the data and predict the **Exact Grade** a new student is likely to achieve.")
 
-            if 'Grade' not in df_clean.columns:
-                st.error("The 'Grade' column is missing. Cannot build a predictive model.")
+            clf, acc, X_cols, X_cat_cols, features_cat = train_model(df_clean)
+
+            if clf is None:
+                st.error(
+                    "Not enough clean data to train the model. Ensure Final Grade, Study Hours, and demographic columns are present.")
             else:
-                features = [f for f in ['Gender', 'Test Preparation', 'Ethnicity', 'Parental Education', 'Lunch'] if
-                            f in df_clean.columns]
-                ml_df = df_clean.dropna(subset=['Grade'] + features).copy()
-                ml_df['Is_A_Grade'] = ml_df['Grade'].apply(lambda x: 1 if x == 'A' else 0)
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.success(f"**Model Accuracy:** {acc * 100:.2f}%")
+                    st.write("**Target:** Predicting Exact Grade (A, B, C, D, E, F)")
+                    st.info(
+                        "ℹ️ **Model Context:** This model relies on a combination of innate demographic traits and active student behaviors (like Study Hours and Attendance). By feeding both into the Random Forest algorithm, we can capture the holistic student profile and accurately predict the expected final grade category.")
 
-                if ml_df.empty:
-                    st.error("Not enough clean data to train the model.")
-                else:
-                    X = ml_df[features]
-                    y = ml_df['Is_A_Grade']
-                    X_encoded = pd.get_dummies(X, drop_first=True)
-                    X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
+                with col2:
+                    st.write("#### Top Predictive Features")
+                    importances = clf.feature_importances_
+                    feat_df = pd.DataFrame({'Feature': X_cols, 'Importance': importances}).sort_values(by='Importance',
+                                                                                                       ascending=False).head(
+                        5)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.barplot(data=feat_df, x='Importance', y='Feature', color='#2E7D6B', ax=ax)
+                    ax.set_xlabel("Importance Score");
+                    ax.set_ylabel("")
+                    st.pyplot(fig)
 
-                    with st.spinner('Training Random Forest Classifier...'):
-                        clf = RandomForestClassifier(n_estimators=100, random_state=42)
-                        clf.fit(X_train, y_train)
-                        y_pred = clf.predict(X_test)
-                        acc = accuracy_score(y_test, y_pred)
+                st.markdown("---")
+                st.write("#### 🔮 Make a Live Prediction")
+                st.write(
+                    "Adjust the behavioral and demographic sliders below to see how the Machine Learning algorithm predicts the academic outcome.")
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.success(f"**Model Accuracy:** {acc * 100:.2f}%")
-                        st.write("**Target:** Predicting 'Grade A'")
-                        st.write(f"**Features Used:** {', '.join(features)}")
+                col_p1, col_p2, col_p3 = st.columns(3)
+                with col_p1:
+                    user_gender = st.selectbox("Gender", df_clean['Gender'].dropna().unique())
+                    user_school = st.selectbox("School Type", df_clean['School Type'].dropna().unique())
+                    user_internet = st.selectbox("Internet Access", df_clean['Internet Access'].dropna().unique())
+                with col_p2:
+                    user_pedu = st.selectbox("Parent Education", EDU_ORDER)
+                    user_method = st.selectbox("Study Method", df_clean['Study Method'].dropna().unique())
+                    user_extra = st.selectbox("Extra Activities", df_clean['Extra Activities'].dropna().unique())
+                with col_p3:
+                    user_travel = st.selectbox("Travel Time", df_clean['Travel Time'].dropna().unique())
+                    user_study_hr = st.slider("Study Hours (Weekly)", min_value=0.0,
+                                              max_value=float(df_clean['Study Hours'].max()), value=5.0, step=0.5)
+                    user_attend = st.slider("Attendance Percentage", min_value=0.0, max_value=100.0, value=80.0,
+                                            step=1.0)
 
-                    with col2:
-                        st.write("#### Top Predictive Features")
-                        importances = clf.feature_importances_
-                        feat_df = pd.DataFrame({'Feature': X_encoded.columns, 'Importance': importances}).sort_values(
-                            by='Importance', ascending=False).head(5)
-                        fig, ax = plt.subplots(figsize=(5, 3))
-                        sns.barplot(data=feat_df, x='Importance', y='Feature', color='#2E7D6B', ax=ax)
-                        ax.set_xlabel("Importance Score");
-                        ax.set_ylabel("")
-                        st.pyplot(fig)
+                if st.button("Predict Exact Grade"):
+                    user_data_cat = pd.DataFrame({
+                        'Gender': [user_gender],
+                        'School Type': [user_school],
+                        'Parent Education': [user_pedu],
+                        'Internet Access': [user_internet],
+                        'Travel Time': [user_travel],
+                        'Extra Activities': [user_extra],
+                        'Study Method': [user_method]
+                    })
+                    user_encoded = pd.get_dummies(user_data_cat).reindex(columns=X_cat_cols, fill_value=0)
 
-                    st.markdown("---")
-                    st.write("#### 🔮 Make a Live Prediction")
-                    st.write(
-                        "Adjust the demographic sliders below to see how the Machine Learning algorithm predicts the academic outcome.")
-                    col_p1, col_p2 = st.columns(2)
-                    with col_p1:
-                        user_gender = st.selectbox("Select Gender", df_clean['Gender'].dropna().unique())
-                        user_prep = st.selectbox("Select Test Preparation",
-                                                 df_clean['Test Preparation'].dropna().unique())
-                        user_lunch = st.selectbox("Select Lunch", df_clean['Lunch'].dropna().unique())
-                    with col_p2:
-                        user_ethnicity = st.selectbox("Select Ethnicity", df_clean['Ethnicity'].dropna().unique())
-                        user_pedu = st.selectbox("Select Parental Education", EDU_ORDER)
+                    user_data_num = pd.DataFrame({
+                        'Study Hours': [user_study_hr],
+                        'Attendance Percentage': [user_attend]
+                    })
 
-                    if st.button("Predict Grade"):
-                        user_data = pd.DataFrame(
-                            {'Gender': [user_gender], 'Test Preparation': [user_prep], 'Ethnicity': [user_ethnicity],
-                             'Parental Education': [user_pedu], 'Lunch': [user_lunch]})
-                        user_encoded = pd.get_dummies(user_data).reindex(columns=X_encoded.columns, fill_value=0)
-                        prediction = clf.predict(user_encoded)[0]
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        if prediction == 1:
-                            st.success("🎉 **Prediction:** This student is likely to achieve an **A Grade**!")
-                        else:
-                            st.warning("📊 **Prediction:** This student is likely to achieve a **Grade B or lower**.")
+                    user_final = pd.concat([user_encoded, user_data_num], axis=1)
+                    user_final = user_final[X_cols]
+
+                    prediction = clf.predict(user_final)[0]
+                    st.markdown("<br>", unsafe_allow_html=True)
+
+                    if prediction == 'A':
+                        st.success("🎉 **Prediction:** This student is likely to achieve an **A Grade**!")
+                    elif prediction == 'B':
+                        st.success("📈 **Prediction:** This student is likely to achieve a **B Grade**.")
+                    elif prediction == 'C':
+                        st.info("📊 **Prediction:** This student is likely to achieve a **C Grade**.")
+                    elif prediction == 'D':
+                        st.warning("📉 **Prediction:** This student is likely to achieve a **D Grade**.")
+                    elif prediction == 'E':
+                        st.warning("⚠️ **Prediction:** This student is likely to achieve an **E Grade**.")
+                    else:
+                        st.error("❌ **Prediction:** This student is likely to **Fail (F)**.")
 
     except FileNotFoundError:
-        st.error("Dataset not found. Please ensure 'Student_performance_10k.csv' is saved in the 'Dataset' folder.")
+        st.error("Dataset not found. Please ensure 'Student_Performance.csv' is saved in the 'Dataset' folder.")
 
 # PAGE: RESOURCES
 elif st.session_state.current_page == "Resources":
     st.title("Resources")
     st.write(
-        "Here you can explore the raw dataset used to generate all insights in this dashboard. Use the filters to slice the data and review the Data Dictionary below to understand what each column represents.")
+        "Here you can explore the dataset used to generate all insights in this dashboard. Use the filters to slice the data and review the Data Dictionary below to understand what each column represents.")
     st.markdown(
-        "🔗 **Data Source:** [Students Performance 10000 Clean Data EDA on Kaggle](https://www.kaggle.com/datasets/nadeemajeedch/students-performance-10000-clean-data-eda)\n<br>",
+        "🔗 **Data Source:** [Student Performance Dataset on Kaggle](https://www.kaggle.com/datasets/kundanbedmutha/student-performance-dataset?resource=download)\n<br>",
         unsafe_allow_html=True)
 
     try:
-        df = fetch_clean_student_data()
+        df = load_student_data()
         filtered_df = df.copy()
 
-        search_query = st.text_input("Search by Student Number:", value="", placeholder="e.g., std-100")
+        search_query = st.text_input("Search by Student ID:", value="", placeholder="e.g., 100")
         with st.expander("📊 Filter Data by Categories", expanded=True):
             col1, col2, col3 = st.columns(3)
             with col1:
-                selected_grades = st.multiselect("Grade", options=sorted(
-                    df['Grade'].dropna().unique()) if 'Grade' in df.columns else [])
+                selected_grades = st.multiselect("Final Grade", options=sorted(
+                    df['Final Grade'].dropna().unique()) if 'Final Grade' in df.columns else [])
                 selected_gender = st.multiselect("Gender", options=sorted(
                     df['Gender'].dropna().unique()) if 'Gender' in df.columns else [])
             with col2:
-                selected_ethnicity = st.multiselect("Ethnicity", options=sorted(
-                    df['Ethnicity'].dropna().unique()) if 'Ethnicity' in df.columns else [])
-                selected_lunch = st.multiselect("Lunch", options=sorted(
-                    df['Lunch'].dropna().unique()) if 'Lunch' in df.columns else [])
+                selected_school = st.multiselect("School Type", options=sorted(
+                    df['School Type'].dropna().unique()) if 'School Type' in df.columns else [])
+                selected_internet = st.multiselect("Internet Access", options=sorted(
+                    df['Internet Access'].dropna().unique()) if 'Internet Access' in df.columns else [])
             with col3:
-                selected_pedu = st.multiselect("Parental Education",
-                                               options=EDU_ORDER if 'Parental Education' in df.columns else [])
-                selected_prep = st.multiselect("Test Preparation", options=sorted(
-                    df['Test Preparation'].dropna().unique()) if 'Test Preparation' in df.columns else [])
+                selected_pedu = st.multiselect("Parent Education",
+                                               options=EDU_ORDER if 'Parent Education' in df.columns else [])
+                selected_method = st.multiselect("Study Method", options=sorted(
+                    df['Study Method'].dropna().unique()) if 'Study Method' in df.columns else [])
 
-        if search_query and 'Student Number' in filtered_df.columns: filtered_df = filtered_df[
-            filtered_df['Student Number'].astype(str).str.contains(search_query, case=False, na=False)]
-        if selected_grades and 'Grade' in filtered_df.columns: filtered_df = filtered_df[
-            filtered_df['Grade'].isin(selected_grades)]
+        if search_query and 'Student ID' in filtered_df.columns: filtered_df = filtered_df[
+            filtered_df['Student ID'].astype(str).str.contains(search_query, case=False, na=False)]
+        if selected_grades and 'Final Grade' in filtered_df.columns: filtered_df = filtered_df[
+            filtered_df['Final Grade'].isin(selected_grades)]
         if selected_gender and 'Gender' in filtered_df.columns: filtered_df = filtered_df[
             filtered_df['Gender'].isin(selected_gender)]
-        if selected_ethnicity and 'Ethnicity' in filtered_df.columns: filtered_df = filtered_df[
-            filtered_df['Ethnicity'].isin(selected_ethnicity)]
-        if selected_lunch and 'Lunch' in filtered_df.columns: filtered_df = filtered_df[
-            filtered_df['Lunch'].isin(selected_lunch)]
-        if selected_pedu and 'Parental Education' in filtered_df.columns: filtered_df = filtered_df[
-            filtered_df['Parental Education'].isin(selected_pedu)]
-        if selected_prep and 'Test Preparation' in filtered_df.columns: filtered_df = filtered_df[
-            filtered_df['Test Preparation'].isin(selected_prep)]
+        if selected_school and 'School Type' in filtered_df.columns: filtered_df = filtered_df[
+            filtered_df['School Type'].isin(selected_school)]
+        if selected_internet and 'Internet Access' in filtered_df.columns: filtered_df = filtered_df[
+            filtered_df['Internet Access'].isin(selected_internet)]
+        if selected_pedu and 'Parent Education' in filtered_df.columns: filtered_df = filtered_df[
+            filtered_df['Parent Education'].isin(selected_pedu)]
+        if selected_method and 'Study Method' in filtered_df.columns: filtered_df = filtered_df[
+            filtered_df['Study Method'].isin(selected_method)]
 
         st.caption(f"Showing {len(filtered_df)} of {len(df)} records")
         st.dataframe(filtered_df, use_container_width=True, hide_index=True)
@@ -553,26 +585,25 @@ elif st.session_state.current_page == "Resources":
             st.markdown("""
             Below is a breakdown of the columns available in the dataset and what they represent:
 
-            * **Student Number:** Represents the unique roll number of the student.
-            * **Gender:** Useful for analyzing performance differences between male and female students.
-            * **Ethnicity:** Allows analysis of academic performance trends across different ethnic groups.
-            * **Parental Education:** Indicates the educational background of the student's family.
-            * **Lunch:** Shows whether students receive a free or reduced lunch, which is often a socioeconomic indicator.
-            * **Test Preparation:** Tells whether students completed a test preparation course, which could impact their performance.
-            * **Math Score:** Provides a measure of each student’s performance in math, used to calculate averages or trends.
-            * **Science Score:** Evaluates students' Science knowledge, which can be analyzed to assess overall scientific understanding.
-            * **Reading Score:** Measures performance in reading, allowing for insights into literacy and comprehension levels.
-            * **Writing Score:** Evaluates students' writing skills, which can be analyzed to assess overall literacy and expression.
-            * **Total Score:** Shows the total number achieved by the student out of 400.
-            * **Grade:** The academic tier achieved by the student, calculated as follows:
-                * **A:** Total marks ≥ 320
-                * **B:** Total marks ≥ 250
-                * **C:** Total marks ≥ 200
-                * **D:** Total marks ≥ 150
-                * **Fail:** Total marks < 150
+            * **Student ID:** Unique identifier for each student.
+            * **Age:** Age of the student.
+            * **Gender:** Student gender (Male, Female, Other).
+            * **School Type:** Indicates if the student attends a Public or Private school.
+            * **Parent Education:** Highest education level attained by the student's parents.
+            * **Study Hours:** Number of hours the student spends studying per week.
+            * **Attendance Percentage:** Percentage of total classes attended.
+            * **Internet Access:** Indicates whether the student has internet access at home.
+            * **Travel Time:** Estimated time taken to commute to school.
+            * **Extra Activities:** Participation in extracurricular activities.
+            * **Study Method:** The primary method the student utilizes to study (e.g., Notes, Textbook, Coaching).
+            * **Math Score:** Score achieved in Mathematics.
+            * **Science Score:** Score achieved in Science.
+            * **English Score:** Score achieved in English.
+            * **Overall Score:** Aggregate performance score representing total academic standing.
+            * **Final Grade:** The academic tier achieved by the student (A, B, C, D, E, F).
             """)
     except FileNotFoundError:
-        st.error("Dataset not found. Please ensure 'Student_performance_10k.csv' is saved in the 'Dataset' folder.")
+        st.error("Dataset not found. Please ensure 'Student_Performance.csv' is saved in the 'Dataset' folder.")
 
 # PAGE: ABOUT US
 elif st.session_state.current_page == "About Us":
