@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -373,15 +372,20 @@ elif st.session_state.current_page == "Findings":
                 df_corr_data = pd.concat([df_dummies, df_clean['Overall Score']], axis=1).dropna()
                 trait_correlations = df_corr_data.corr()['Overall Score'].drop('Overall Score').sort_values()
 
-                fig1, ax1 = plt.subplots(figsize=(10, 8))
-                colors = ['#C44E52' if x < 0 else '#2E7D6B' for x in trait_correlations.values]
-                clean_labels = [c.replace('_', ': ').title() for c in trait_correlations.index]
+                col_corr1, col_corr2 = st.columns([2, 1])
+                with col_corr1:
+                    fig1, ax1 = plt.subplots(figsize=(6, 4))
+                    colors = ['#C44E52' if x < 0 else '#2E7D6B' for x in trait_correlations.values]
+                    clean_labels = [c.replace('_', ': ').title() for c in trait_correlations.index]
 
-                sns.barplot(x=trait_correlations.values, y=clean_labels, palette=colors, ax=ax1)
-                ax1.set_xlabel("Pearson Correlation with Overall Score")
-                ax1.axvline(0, color='black', linewidth=1)
-                st.pyplot(fig1)
-                st.info("💡 Green Bars correlate positively with higher scores. Red Bars correlate with lower scores.")
+                    sns.barplot(x=trait_correlations.values, y=clean_labels, palette=colors, ax=ax1)
+                    ax1.set_xlabel("Pearson Correlation with Overall Score")
+                    ax1.axvline(0, color='black', linewidth=1)
+                    st.pyplot(fig1)
+
+                with col_corr2:
+                    st.info(
+                        "💡 **Interpretation:**\n\nGreen Bars correlate positively with higher scores. Red Bars correlate with lower scores. Notice which specific educational features pull scores upward.")
                 st.markdown("---")
 
                 st.markdown("### 2. The Compounding Effect of Advantage")
@@ -404,13 +408,17 @@ elif st.session_state.current_page == "Findings":
                 df_adv['Adv_Extra'] = (df_adv['Extra Activities'] == 'Yes').astype(int)
                 df_adv['Total Advantages'] = df_adv['Adv_Internet'] + df_adv['Adv_Parent'] + df_adv['Adv_Extra']
 
-                fig2, ax2 = plt.subplots(figsize=(8, 5))
-                sns.boxplot(data=df_adv, x='Total Advantages', y='Overall Score', palette="crest", ax=ax2)
-                ax2.set_xlabel("Number of Advantages (0 = None, 3 = All)")
-                ax2.set_ylabel("Overall Score")
-                st.pyplot(fig2)
-                st.info(
-                    "💡 The median score climbs steadily with each additional socioeconomic or engagement advantage a student has.")
+                col_corr3, col_corr4 = st.columns([2, 1])
+                with col_corr3:
+                    fig2, ax2 = plt.subplots(figsize=(5, 3))
+                    sns.boxplot(data=df_adv, x='Total Advantages', y='Overall Score', palette="crest", ax=ax2)
+                    ax2.set_xlabel("Number of Advantages (0 = None, 3 = All)")
+                    ax2.set_ylabel("Overall Score")
+                    st.pyplot(fig2)
+
+                with col_corr4:
+                    st.info(
+                        "💡 **Interpretation:**\n\nThe median score climbs steadily with each additional socioeconomic or engagement advantage a student has. This highlights how compounding traits create gaps in performance.")
                 st.markdown("---")
 
                 st.markdown("### 3. Academic Synergies (Subject Correlations)")
@@ -418,11 +426,15 @@ elif st.session_state.current_page == "Findings":
                 available_scores = [c for c in score_cols if c in df_clean.columns]
 
                 if len(available_scores) > 1:
-                    fig3, ax3 = plt.subplots(figsize=(7, 5))
-                    sns.heatmap(df_clean[available_scores].corr(), annot=True, cmap='crest', fmt='.2f', vmin=0.5,
-                                vmax=1, ax=ax3)
-                    st.pyplot(fig3)
-                    st.info("💡 Identifying the crossover dependencies between exact subjects.")
+                    col_corr5, col_corr6 = st.columns([2, 1])
+                    with col_corr5:
+                        fig3, ax3 = plt.subplots(figsize=(5, 4))
+                        sns.heatmap(df_clean[available_scores].corr(), annot=True, cmap='crest', fmt='.2f', vmin=0.5,
+                                    vmax=1, ax=ax3)
+                        st.pyplot(fig3)
+                    with col_corr6:
+                        st.info(
+                            "💡 **Interpretation:**\n\nIdentifying the crossover dependencies between exact subjects. Darker blocks signify a tighter relationship where excelling in one subject heavily implies excelling in the other.")
                 st.markdown("---")
 
                 st.markdown("### 4. Trait Impact by Individual Subject")
@@ -433,9 +445,14 @@ elif st.session_state.current_page == "Findings":
                         ['Adv_Internet', 'Adv_Parent', 'Adv_Extra'], available_scores]
                     trait_subject_corr.index = ['Internet Access', 'Parent Degree', 'Extra Activities']
 
-                    fig4, ax4 = plt.subplots(figsize=(8, 4))
-                    sns.heatmap(trait_subject_corr, annot=True, cmap='crest', fmt='.2f', vmin=0, vmax=0.5, ax=ax4)
-                    st.pyplot(fig4)
+                    col_corr7, col_corr8 = st.columns([2, 1])
+                    with col_corr7:
+                        fig4, ax4 = plt.subplots(figsize=(6, 3))
+                        sns.heatmap(trait_subject_corr, annot=True, cmap='crest', fmt='.2f', vmin=0, vmax=0.5, ax=ax4)
+                        st.pyplot(fig4)
+                    with col_corr8:
+                        st.info(
+                            "💡 **Interpretation:**\n\nCompare the columns to see which specific subject is most heavily influenced by each demographic advantage. Higher values mean a stronger positive correlation.")
 
         elif subsection == "5. Predictive Modeling":
             st.write(
