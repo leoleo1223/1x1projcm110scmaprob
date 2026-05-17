@@ -1,5 +1,21 @@
+"""
+Student Performance Analytics Dashboard
+=======================================
+A Streamlit web application that explores the relationship between
+socioeconomic backgrounds, study behaviors, and academic performance.
+
+Key Features:
+- Exploratory Data Analysis (Univariate & Bivariate)
+- Interactive Plotly visualizations (Sunburst, Radar, Violin)
+- Machine Learning Predictive Modeling (Random Forest)
+
+Dependencies:
+streamlit, pandas, numpy, matplotlib, seaborn, plotly, scikit-learn
+"""
+
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -10,6 +26,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
+# ==========================================
+# CONFIGURATION & STYLING
+# ==========================================
+
+# Inject custom CSS to style the Streamlit app layout, colors, and navigation bar.
 CUSTOM_CSS = """
 <style>
     :root {
@@ -23,10 +44,12 @@ CUSTOM_CSS = """
     .stApp a { color: var(--accent-deep); }
     hr { border-color: var(--border-soft) !important; margin: 6px 0 14px 0 !important; }
 
+    /* Hide default Streamlit headers and footers for a cleaner look */
     [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] { display: none !important; }
     [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, [data-testid="stAppViewContainer"] > .main { padding-top: 0 !important; margin-top: 0 !important; }
     [data-testid="stMainBlockContainer"], .block-container { padding-top: 0 !important; padding-left: 2.5rem !important; padding-right: 2.5rem !important; max-width: 100% !important; }
 
+    /* Custom Navigation Bar styling */
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) { 
         position: sticky; top: 0; z-index: 999; background-color: var(--nav-bg); 
         padding: 0px 20px !important; border-bottom: 1px solid var(--nav-border); 
@@ -40,6 +63,7 @@ CUSTOM_CSS = """
     div[data-testid="stHorizontalBlock"]:has(.nav-anchor) img { margin: 0 !important; padding: 0 !important; }
     .nav-logo { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background-color: var(--accent-strong); color: var(--nav-bg); font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; flex-shrink: 0; }
 
+    /* Styling the Radio buttons to look like nav links */
     [data-testid="stRadio"] { margin: 0 !important; padding: 0 !important; }
     [data-testid="stRadio"] div[role="radiogroup"] { display: flex; justify-content: flex-start; align-items: center; gap: 28px; padding: 0 !important; min-height: 0 !important; }
     [data-testid="stRadio"] div[role="radiogroup"] label svg, [data-testid="stRadio"] div[role="radiogroup"] label > div:first-child { display: none !important; }
@@ -50,6 +74,7 @@ CUSTOM_CSS = """
     [data-testid="stRadio"] div[role="radiogroup"] label[aria-checked="true"] p::after, [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) p::after { transform: scaleX(1); }
     [data-testid="stRadio"] div[role="radiogroup"] label:hover p { color: var(--nav-text-active); cursor: pointer; }
 
+    /* Buttons and Inputs */
     .stButton > button, .stDownloadButton > button { background-color: var(--accent-deep) !important; color: #FFFFFF !important; border: 1px solid var(--accent) !important; border-radius: 8px !important; transition: all 0.2s ease !important; }
     .stButton > button *, .stDownloadButton > button * { color: #FFFFFF !important; }
     .stButton > button:hover, .stDownloadButton > button:hover { background-color: var(--accent) !important; border-color: var(--accent-strong) !important; color: #FFFFFF !important; }
@@ -59,45 +84,79 @@ CUSTOM_CSS = """
 </style>
 """
 
+# Apply basic page configurations
 st.set_page_config(page_title="Socioeconomic & Academic Analysis", layout="wide")
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 sns.set_theme(style="whitegrid", palette="crest")
 
+# Standardized order for ordinal categorical data
 EDU_ORDER = ["No Formal Education", "High School", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD"]
 
 
+# ==========================================
+# DATA & MODEL CACHING (HELPER FUNCTIONS)
+# ==========================================
+
 @st.cache_data(show_spinner="Loading dataset...")
 def load_student_data():
+    """
+    Loads and initially cleans the main dataset from the local file system.
+    Cached via Streamlit to prevent reloading on every UI interaction.
+
+    Returns:
+        pd.DataFrame: A pandas dataframe containing the student data.
+    """
     file_path = Path(__file__).parent / "Dataset" / "Student_Performance.csv"
     df = pd.read_csv(file_path)
+    # Strip any accidental trailing spaces from column names
     df.columns = df.columns.str.strip()
     return df
 
 
 @st.cache_resource(show_spinner="Training Tuned Random Forest Classifier (One Time)...")
 def train_model(df_clean):
+    """
+    Trains a Random Forest Machine Learning model using demographic and behavioral data
+    to predict the exact final grade category. Cached via st.cache_resource so the heavy
+    computation only happens once per session.
+
+    Args:
+        df_clean (pd.DataFrame): The sanitized dataframe containing features and target variable.
+
+    Returns:
+        clf: The trained RandomForestClassifier model.
+        acc (float): The accuracy score of the model on test data.
+        X.columns (Index): The ordered list of all final encoded features expected by the model.
+        X_cat.columns (Index): The list of one-hot encoded categorical features.
+        features_cat (list): The original raw categorical column names.
+    """
+    # Separate features into Categorical and Numerical categories
     features_cat = [f for f in
                     ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Travel Time', 'Extra Activities',
                      'Study Method'] if f in df_clean.columns]
     features_num = [f for f in ['Study Hours', 'Attendance Percentage'] if f in df_clean.columns]
 
+    # Drop rows missing crucial target or feature data
     ml_df = df_clean.dropna(subset=['Final Grade'] + features_cat + features_num).copy()
 
     if ml_df.empty:
         return None, None, None, None, None
 
+    # One-Hot Encode categorical variables and merge back with numericals
     X_cat = pd.get_dummies(ml_df[features_cat], drop_first=True)
     X_num = ml_df[features_num]
     X = pd.concat([X_cat, X_num], axis=1)
     y = ml_df['Final Grade']
 
+    # 80/20 Train-Test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+    # Initialize and train the classifier with hyperparameter optimizations
     clf = RandomForestClassifier(
         n_estimators=250,
         max_depth=12,
         min_samples_split=5,
-        class_weight='balanced',
+        class_weight='balanced',  # Handles imbalanced grade distributions naturally
         random_state=42
     )
     clf.fit(X_train, y_train)
@@ -107,15 +166,23 @@ def train_model(df_clean):
     return clf, acc, X.columns, X_cat.columns, features_cat
 
 
-if 'current_page' not in st.session_state: st.session_state.current_page = "Home"
+# ==========================================
+# APP NAVIGATION & ROUTING
+# ==========================================
+
+# Initialize session state for page routing
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "Home"
 
 
-def go_to_findings(): st.session_state.current_page = "Findings"
+def go_to_findings():
+    st.session_state.current_page = "Findings"
 
 
 menu_options = ["Home", "Findings", "Resources", "About Us"]
 logo_col, menu_col, _spacer = st.columns([1, 10, 1], vertical_alignment="center")
 
+# Render custom top navigation bar
 with logo_col:
     st.markdown('<span class="nav-anchor"></span>', unsafe_allow_html=True)
     logo_path = Path(__file__).parent / "Images" / "Logo.png"
@@ -127,7 +194,9 @@ with logo_col:
 with menu_col:
     st.radio("Navigate:", menu_options, key="current_page", horizontal=True, label_visibility="collapsed")
 
-# PAGE: HOME
+# ==========================================
+# PAGE 1: HOME
+# ==========================================
 if st.session_state.current_page == "Home":
     st.title("Socioeconomic Factors vs Academic Performance")
     home_col1, home_col2 = st.columns([1.2, 1], gap="large")
@@ -144,14 +213,18 @@ if st.session_state.current_page == "Home":
         st.button("View Data Findings", on_click=go_to_findings)
 
     with home_col2:
+        # Load local hero image based on user specifications
         home_img_path = Path(__file__).parent / "Images" / "Home_Page.jpeg"
         if home_img_path.exists():
             st.image(str(home_img_path), use_container_width=True,
                      caption="Empowering Education through Equity and Data")
         else:
-            st.info("[Image Placeholder: Home_Page.jpeg not found]")
+            st.info(f"[Image Placeholder: {home_img_path.name} not found]")
 
-# PAGE: FINDINGS
+
+# ==========================================
+# PAGE 2: DATA FINDINGS (ANALYSIS)
+# ==========================================
 elif st.session_state.current_page == "Findings":
     st.title("Data Findings")
     st.write(
@@ -161,6 +234,7 @@ elif st.session_state.current_page == "Findings":
         df = load_student_data()
         df_clean = df.copy()
 
+        # Subsection routing dropdown
         subsection = st.selectbox(
             "Select an analysis to view:",
             ["1. Statistical Summary", "2. Univariate Analysis", "3. Bivariate Analysis",
@@ -169,6 +243,7 @@ elif st.session_state.current_page == "Findings":
         st.markdown("---")
         st.subheader(subsection)
 
+        # --- SUBSECTION 1: STATISTICAL SUMMARY ---
         if subsection == "1. Statistical Summary":
             st.write(
                 "The Statistical Summary provides a high-level mathematical overview of our dataset. It computes averages, standard deviations, and quartiles for the numeric scores, while also giving us a precise headcount for all the demographic categories.")
@@ -181,6 +256,8 @@ elif st.session_state.current_page == "Findings":
             st.write("#### Categorical Variables Overview (Frequency Distributions)")
             cat_cols = [c for c in ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Travel Time',
                                     'Extra Activities', 'Study Method', 'Final Grade'] if c in df.columns]
+
+            # Distribute categorical tables across 3 columns
             c1, c2, c3 = st.columns(3)
             cols = [c1, c2, c3]
             for i, col in enumerate(cat_cols):
@@ -188,6 +265,7 @@ elif st.session_state.current_page == "Findings":
                     st.write(f"**{col}**")
                     st.dataframe(df[col].value_counts(), use_container_width=True)
 
+        # --- SUBSECTION 2: UNIVARIATE ANALYSIS ---
         elif subsection == "2. Univariate Analysis":
             st.write(
                 "Univariate Analysis involves examining a single variable at a time. The goal here is to understand the underlying distribution, identify central tendencies, and spot any potential outliers within individual demographics and scores before we start looking for complex relationships.")
@@ -230,10 +308,12 @@ elif st.session_state.current_page == "Findings":
                                   order=sorted(plot_df['Study Method'].unique()), ax=ax4)
                     st.pyplot(fig4)
 
+        # --- SUBSECTION 3: BIVARIATE ANALYSIS ---
         elif subsection == "3. Bivariate Analysis":
             st.write(
                 "Bivariate Analysis compares two different variables to uncover relationships, trends, and potential causalities. Here, we investigate how various demographic factors directly influence total academic scores. You can use the toggles below to switch between different demographics and chart types.")
 
+            # Interactive Plot controls
             col_biv1, col_biv2 = st.columns([2, 1])
             with col_biv1:
                 biv_option = st.radio(
@@ -287,6 +367,7 @@ elif st.session_state.current_page == "Findings":
 
             st.markdown("---")
 
+            # Plotly Interactive Explorer component
             st.write("#### 🚀 Advanced Interactive Explorer")
             st.write(
                 "Use these highly readable, interactive visualizations to truly understand the data structure. You can click on sections to drill down, hover over nodes to see exact averages, and easily compare socioeconomic subgroups.")
@@ -358,6 +439,7 @@ elif st.session_state.current_page == "Findings":
                                             margin=dict(t=40, l=0, r=0, b=0))
                     st.plotly_chart(fig_split, use_container_width=True)
 
+        # --- SUBSECTION 4: CORRELATION ANALYSIS ---
         elif subsection == "4. Correlation & Impact Analysis":
             st.write(
                 "Correlation Analysis quantifies the mathematical relationship between multiple variables. By isolating specific traits using One-Hot Encoding, we can objectively measure which socioeconomic traits act as the strongest drivers of academic success, and which traits indicate a disadvantage.")
@@ -368,6 +450,7 @@ elif st.session_state.current_page == "Findings":
                             ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Extra Activities',
                              'Study Method', 'Travel Time'] if c in df_clean.columns]
 
+                # Convert categories to numerical flags for pearson correlation
                 df_dummies = pd.get_dummies(df_clean[cat_cols].dropna())
                 df_corr_data = pd.concat([df_dummies, df_clean['Overall Score']], axis=1).dropna()
                 trait_correlations = df_corr_data.corr()['Overall Score'].drop('Overall Score').sort_values()
@@ -402,6 +485,7 @@ elif st.session_state.current_page == "Findings":
                 df_adv = df_clean.copy().dropna(
                     subset=['Internet Access', 'Parent Education', 'Extra Activities', 'Overall Score'])
 
+                # Map specific categorical string responses to binary integers
                 df_adv['Adv_Internet'] = (df_adv['Internet Access'] == 'Yes').astype(int)
                 df_adv['Adv_Parent'] = df_adv['Parent Education'].isin(
                     ["Bachelor's Degree", "Master's Degree", "PhD"]).astype(int)
@@ -454,10 +538,12 @@ elif st.session_state.current_page == "Findings":
                         st.info(
                             "💡 **Interpretation:**\n\nCompare the columns to see which specific subject is most heavily influenced by each demographic advantage. Higher values mean a stronger positive correlation.")
 
+        # --- SUBSECTION 5: PREDICTIVE MODELING ---
         elif subsection == "5. Predictive Modeling":
             st.write(
                 "Predictive Modeling uses historical data to train a machine learning algorithm. We utilize an **Optimized Random Forest Classifier** to map complex patterns within the data and predict the **Exact Grade** a new student is likely to achieve.")
 
+            # Load the cached model
             clf, acc, X_cols, X_cat_cols, features_cat = train_model(df_clean)
 
             if clf is None:
@@ -488,6 +574,7 @@ elif st.session_state.current_page == "Findings":
                 st.write(
                     "Adjust the behavioral and demographic sliders below to see how the Machine Learning algorithm predicts the academic outcome.")
 
+                # Interactive UI controls mapped to model features
                 col_p1, col_p2, col_p3 = st.columns(3)
                 with col_p1:
                     user_gender = st.selectbox("Gender", df_clean['Gender'].dropna().unique())
@@ -504,6 +591,7 @@ elif st.session_state.current_page == "Findings":
                     user_attend = st.slider("Attendance Percentage", min_value=0.0, max_value=100.0, value=80.0,
                                             step=1.0)
 
+                # Process user input exactly as the training data was processed
                 if st.button("Predict Exact Grade"):
                     user_data_cat = pd.DataFrame({
                         'Gender': [user_gender],
@@ -521,12 +609,14 @@ elif st.session_state.current_page == "Findings":
                         'Attendance Percentage': [user_attend]
                     })
 
+                    # Combine Data and predict
                     user_final = pd.concat([user_encoded, user_data_num], axis=1)
                     user_final = user_final[X_cols]
 
                     prediction = clf.predict(user_final)[0]
                     st.markdown("<br>", unsafe_allow_html=True)
 
+                    # Custom UI responses based on prediction outputs
                     if prediction == 'A':
                         st.success("🎉 **Prediction:** This student is likely to achieve an **A Grade**!")
                     elif prediction == 'B':
@@ -543,7 +633,9 @@ elif st.session_state.current_page == "Findings":
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_Performance.csv' is saved in the 'Dataset' folder.")
 
-# PAGE: RESOURCES
+# ==========================================
+# PAGE 3: RESOURCES & RAW DATA
+# ==========================================
 elif st.session_state.current_page == "Resources":
     st.title("Resources")
     st.write(
@@ -575,6 +667,7 @@ elif st.session_state.current_page == "Resources":
                 selected_method = st.multiselect("Study Method", options=sorted(
                     df['Study Method'].dropna().unique()) if 'Study Method' in df.columns else [])
 
+        # Apply multi-category filtering logic dynamically
         if search_query and 'Student ID' in filtered_df.columns: filtered_df = filtered_df[
             filtered_df['Student ID'].astype(str).str.contains(search_query, case=False, na=False)]
         if selected_grades and 'Final Grade' in filtered_df.columns: filtered_df = filtered_df[
@@ -622,7 +715,9 @@ elif st.session_state.current_page == "Resources":
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_Performance.csv' is saved in the 'Dataset' folder.")
 
-# PAGE: ABOUT US
+# ==========================================
+# PAGE 4: ABOUT US
+# ==========================================
 elif st.session_state.current_page == "About Us":
     st.title("About Us")
     st.write(
