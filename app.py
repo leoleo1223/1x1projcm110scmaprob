@@ -1,5 +1,5 @@
 """
-Student Performance Analytics Dashboard
+PredictEd: A Predictive Software for Student Performance
 =======================================
 A Streamlit web application that explores the relationship between
 socioeconomic backgrounds, study behaviors, and academic performance.
@@ -85,7 +85,7 @@ CUSTOM_CSS = """
 """
 
 # Apply basic page configurations
-st.set_page_config(page_title="Socioeconomic & Academic Analysis", layout="wide")
+st.set_page_config(page_title="PredictEd: A Predictive Software for Student Performance", layout="wide")
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 sns.set_theme(style="whitegrid", palette="crest")
 
@@ -198,7 +198,7 @@ with menu_col:
 # PAGE 1: HOME
 # ==========================================
 if st.session_state.current_page == "Home":
-    st.title("Socioeconomic Factors vs Academic Performance")
+    st.title("PredictEd: A Predictive Software for Student Performance")
     home_col1, home_col2 = st.columns([1.2, 1], gap="large")
 
     with home_col1:
