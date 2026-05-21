@@ -210,7 +210,7 @@ if st.session_state.current_page == "Home":
         st.write("### What You Can Do")
         st.markdown(
             "* 📊 **Analyze Socioeconomic Trends:** Explore the distributions of student backgrounds.\n* 📈 **Visualize Performance Disparities:** Compare how different groups score on tests.\n* 🤖 **Predict Academic Outcomes:** Use machine learning to forecast grades based on demographics.\n* 🔍 **Discover Equity Insights:** Uncover which traits have the strongest impact on education.")
-        st.button("View Data Findings", on_=go_to_findings)
+        st.button("View Data Findings", on_click=go_to_findings)
 
     with home_col2:
         # Load local hero image based on user specifications
