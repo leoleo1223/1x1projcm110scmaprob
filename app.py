@@ -278,6 +278,7 @@ elif st.session_state.current_page == "Findings":
                     sns.histplot(df_clean['Overall Score'].dropna(), kde=True, color='#2E7D6B', ax=ax1)
                     ax1.set_xlabel("Overall Score")
                     st.pyplot(fig1)
+                 st.info("💡 **Interpretation:** The data forms a broad curve rather than the sharp bell-curved peak, indicating that student performance is widely distributed in the middle tier. A distinct left skew is also observed, showing clustering of scores within the lower middle to middle scores, and failing scores are found to be rare.")
 
             with col2:
                 st.write("#### Final Grade Distribution")
@@ -287,6 +288,11 @@ elif st.session_state.current_page == "Findings":
                     fig2, ax2 = plt.subplots(figsize=(6, 4))
                     sns.countplot(data=plot_df, x='Final Grade', order=valid_order, color='#2E7D6B', ax=ax2)
                     st.pyplot(fig2)
+                st.info(
+                        "💡 **Interpretation:**\n\n"
+                        "- The graph shows that Grade C and D are the most common outcomes followed by Grade E indicating that the majority of students consistently perform within the below-average-to-average range.\n"
+                        "- The overall pass-to-fail ratio is extremely high, demonstrating that almost all students meet the required academic standards. The concentration of students within the C and D categories suggest a stable academic performance where most learners achieve satisfactory grades rather than extreme outcomes.")
+)
 
             st.markdown("---")
             col3, col4 = st.columns(2)
@@ -298,6 +304,7 @@ elif st.session_state.current_page == "Findings":
                     sns.countplot(data=plot_df, y='Parent Education', color='#2E7D6B', order=EDU_ORDER, ax=ax3)
                     ax3.set_ylabel("")
                     st.pyplot(fig3)
+                st.info("💡 **Interpretation:** Equal distribution across all parental educational levels are observed for equal representation in the database.")
 
             with col4:
                 st.write("#### Primary Study Method")
@@ -307,6 +314,7 @@ elif st.session_state.current_page == "Findings":
                     sns.countplot(data=plot_df, x='Study Method', color='#2E7D6B',
                                   order=sorted(plot_df['Study Method'].unique()), ax=ax4)
                     st.pyplot(fig4)
+                st.info("💡 **Interpretation:** Similar to parental education, all 5 study methods are observed to have the same distribution for equal representation in the database.")
 
         # --- SUBSECTION 3: BIVARIATE ANALYSIS ---
         elif subsection == "3. Bivariate Analysis":
