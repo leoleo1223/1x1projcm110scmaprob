@@ -360,9 +360,24 @@ elif st.session_state.current_page == "Findings":
                         st.info(
                             "💡 **Interpretation:** The Violin Plot shows the **density** of scores. The wider the violin section, the more students achieved that specific score.")
                     else:
-                        st.info(
-                            "💡 **Interpretation:** Different educational attainments of parents show identical median lines and interquartile ranges (IQR), implying that there is no single parents’ educational background that has an advantage over the others. ")
-                else:
+                       box_interpretations = {
+                            "Parent Education vs Overall Score": (
+                                "💡 **Interpretation:** Different educational attainments of parents show identical median lines and interquartile ranges (IQR), implying that there is no single parents’ educational background that has an advantage over the others."
+                            ),
+                            "Internet Access vs Overall Score": (
+                                "💡 **Interpretation:** Both box plots show identical IQR ranges and median line, suggesting that students who have access to the internet perform better than those who do not, and vice versa."
+                            ),
+                            "Study Method vs Overall Score": (
+                                "💡 **Interpretation:** Consistency among all study methods as observed by the equal box height, median line, and range of whiskers implies that no specific study method has an academic advantage over the others."
+                            ),
+                            "Gender vs Overall Score": (
+                                "💡 **Interpretation:** Gender has no significant effect on the obtained overall scores of the students. Students from all three groups have similar median scores and similar quartile ranges."
+                            ),
+                            "Extra Activities vs Overall Score": (
+                                "💡 **Interpretation:** Students who participate in extra activities and those who do not have similar median scores and similar quartile ranges, suggesting that there is no advantage in having or not having extra activities."
+                            ),
+                        }
+                        st.info(box_interpretations.get(biv_option, "💡 **Interpretation:** Compare the median lines and IQR boxes across groups to identify performance differences."))
                     st.error(f"Column '{x_col}' not found in the dataset.")
 
             st.markdown("---")
