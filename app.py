@@ -522,8 +522,8 @@ elif st.session_state.current_page == "Findings":
                 with col_corr4:
                     st.info(
                         "💡 **Interpretation:**\n\n"
-                        "Students who have an advantage, regardless of how many, have a higher overall score than a student with no advantage.\n"
-                        "The number of advantages a student has has no significant effect on the overall, as evidenced by a near-consistent median score of students with different numbers of advantages.")
+                        "- Students who have an advantage, regardless of how many, have a higher overall score than a student with no advantage.\n"
+                        "- The number of advantages a student has has no significant effect on the overall, as evidenced by a near-consistent median score of students with different numbers of advantages.")
                 st.markdown("---")
 
                 st.markdown("### 3. Academic Synergies (Subject Correlations)")
