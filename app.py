@@ -361,7 +361,7 @@ elif st.session_state.current_page == "Findings":
                             "💡 **Interpretation:** The Violin Plot shows the **density** of scores. The wider the violin section, the more students achieved that specific score.")
                     else:
                         st.info(
-                            "💡 **Interpretation:** The Box Plot shows the **median** (center line inside the box) and spread (quartiles) of scores to easily compare subgroup performance.")
+                            "💡 **Interpretation:** Different educational attainments of parents show identical median lines and interquartile ranges (IQR), implying that there is no single parents’ educational background that has an advantage over the others. ")
                 else:
                     st.error(f"Column '{x_col}' not found in the dataset.")
 
