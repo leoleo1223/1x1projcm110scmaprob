@@ -518,7 +518,7 @@ elif st.session_state.current_page == "Findings":
 
                 with col_corr4:
                     st.info(
-                        "💡 **Interpretation:**\n\nThe median score climbs steadily with each additional socioeconomic or engagement advantage a student has. This highlights how compounding traits create gaps in performance.")
+                        "💡 **Interpretation:**\n\nStudents who have an advantage, regardless of how many, have a higher overall score than a student with no advantage. The number of advantages a student has has no significant effect on the overall, as evidenced by a near-consistent median score of students with different numbers of advantages.")
                 st.markdown("---")
 
                 st.markdown("### 3. Academic Synergies (Subject Correlations)")
@@ -534,7 +534,7 @@ elif st.session_state.current_page == "Findings":
                         st.pyplot(fig3)
                     with col_corr6:
                         st.info(
-                            "💡 **Interpretation:**\n\nIdentifying the crossover dependencies between exact subjects. Darker blocks signify a tighter relationship where excelling in one subject heavily implies excelling in the other.")
+                            "💡 **Interpretation:**\n\nStudents who perform well in one subject also perform well in other subjects, suggesting that all three subjects are equally predictive of each other.")
                 st.markdown("---")
 
                 st.markdown("### 4. Trait Impact by Individual Subject")
@@ -552,7 +552,7 @@ elif st.session_state.current_page == "Findings":
                         st.pyplot(fig4)
                     with col_corr8:
                         st.info(
-                            "💡 **Interpretation:**\n\nCompare the columns to see which specific subject is most heavily influenced by each demographic advantage. Higher values mean a stronger positive correlation.")
+                            "💡 **Interpretation:**\n\nAll correlation values are zero or near zero, confirming that no factor has a significant impact on each subject's score")
 
         # --- SUBSECTION 5: PREDICTIVE MODELING ---
         elif subsection == "5. Predictive Modeling":
