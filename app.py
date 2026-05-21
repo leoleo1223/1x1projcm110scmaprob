@@ -691,16 +691,15 @@ elif st.session_state.current_page == "Resources":
 # PAGE 4: ABOUT US
 elif st.session_state.current_page == "About Us":
     st.title("About Us")
-    st.write(
-        "We are a team of data analysts and researchers passionate about uncovering the hidden narratives within educational data. Our mission is to leverage statistical analysis and machine learning to highlight the critical disparities that affect student success, enabling more equitable educational outcomes.")
+    st.write("We are a team of data analysts and researchers passionate about uncovering the hidden narratives within educational data. Our mission is to leverage statistical analysis and machine learning to highlight the critical disparities that affect student success, enabling more equitable educational outcomes.")
 
     cols = st.columns(5)
     members = [
-        {"name": "Gerard Emmanuel Bernabe", "email": "gmbernabe@up.edu.ph", "image": "Gerard.jpg"},
-        {"name": "Johnicky Benedict Salvador", "email": "jesalvador@up.edu.ph", "image": "Johnicky.jpg"},
-        {"name": "Lance Emerson Arreza", "email": "lnarreza@up.edu.ph", "image": "Lance.jpg"},
-        {"name": "Leo Shane Rubino", "email": "lfrubino@up.edu.ph", "image": "Leo.jpg"},
-        {"name": "Lynus Aio Miguel de Torres", "email": "lndetorres@up.edu.ph", "image": "Lynus.jpg"},
+        {"name": "Gerard Emmanuel Bernabe", "email": "gmbernabe@up.edu.ph", "role": "Designer", "image": "Gerard.jpg"},
+        {"name": "Johnicky Benedict Salvador", "email": "jesalvador@up.edu.ph", "role": "Data Analyst", "image": "Johnicky.jpg"},
+        {"name": "Lance Emerson Arreza", "email": "lnarreza@up.edu.ph", "role": "Developer", "image": "Lance.jpg"},
+        {"name": "Leo Shane Rubino", "email": "lfrubino@up.edu.ph", "role": "Lead Developer", "image": "Leo.jpg"},
+        {"name": "Lynus Aio Miguel de Torres", "email": "lndetorres@up.edu.ph", "role": "Data Analyst", "image": "Lynus.jpg"},
     ]
     image_base_path = Path("About Us")
     for i, col in enumerate(cols):
@@ -713,7 +712,8 @@ elif st.session_state.current_page == "About Us":
             st.markdown(f"""
                 <div style="text-align: center; margin-top: 8px;">
                     <p style="margin-bottom: 2px; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">{members[i]['name']}</p>
-                    <p style="margin-top: 0px; font-size: 0.8rem; color: var(--text-muted);">{members[i]['email']}</p>
+                    <p style="margin-top: 0px; margin-bottom: 2px; font-size: 0.8rem; font-style: italic; color: #4F4F4F;">{members[i]['role']}</p>
+                    <p style="margin-top: 0px; font-size: 0.75rem; color: var(--text-muted);">{members[i]['email']}</p>
                 </div>
             """, unsafe_allow_html=True)
 
