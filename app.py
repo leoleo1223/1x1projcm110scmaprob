@@ -1,21 +1,5 @@
-"""
-PredictEd: A Predictive Software for Student Performance
-=======================================
-A Streamlit web application that explores the relationship between
-socioeconomic backgrounds, study behaviors, and academic performance.
-
-Key Features:
-- Exploratory Data Analysis (Univariate & Bivariate)
-- Interactive Plotly visualizations (Sunburst, Radar, Violin)
-- Machine Learning Predictive Modeling (Random Forest)
-
-Dependencies:
-streamlit, pandas, numpy, matplotlib, seaborn, plotly, scikit-learn
-"""
-
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -26,10 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-# ==========================================
 # CONFIGURATION & STYLING
-# ==========================================
-
 # Inject custom CSS to style the Streamlit app layout, colors, and navigation bar.
 CUSTOM_CSS = """
 <style>
@@ -93,43 +74,18 @@ sns.set_theme(style="whitegrid", palette="crest")
 EDU_ORDER = ["No Formal Education", "High School", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD"]
 
 
-# ==========================================
-# DATA & MODEL CACHING (HELPER FUNCTIONS)
-# ==========================================
-
+# Data and model helper functions (prevent reloading on every interaction)
 @st.cache_data(show_spinner="Loading dataset...")
 def load_student_data():
-    """
-    Loads and initially cleans the main dataset from the local file system.
-    Cached via Streamlit to prevent reloading on every UI interaction.
-
-    Returns:
-        pd.DataFrame: A pandas dataframe containing the student data.
-    """
     file_path = Path(__file__).parent / "Dataset" / "Student_Performance.csv"
     df = pd.read_csv(file_path)
     # Strip any accidental trailing spaces from column names
     df.columns = df.columns.str.strip()
     return df
 
-
+# Train a Random Forest Machine Learning model to determine exact final grade
 @st.cache_resource(show_spinner="Training Tuned Random Forest Classifier (One Time)...")
 def train_model(df_clean):
-    """
-    Trains a Random Forest Machine Learning model using demographic and behavioral data
-    to predict the exact final grade category. Cached via st.cache_resource so the heavy
-    computation only happens once per session.
-
-    Args:
-        df_clean (pd.DataFrame): The sanitized dataframe containing features and target variable.
-
-    Returns:
-        clf: The trained RandomForestClassifier model.
-        acc (float): The accuracy score of the model on test data.
-        X.columns (Index): The ordered list of all final encoded features expected by the model.
-        X_cat.columns (Index): The list of one-hot encoded categorical features.
-        features_cat (list): The original raw categorical column names.
-    """
     # Separate features into Categorical and Numerical categories
     features_cat = [f for f in
                     ['Gender', 'School Type', 'Parent Education', 'Internet Access', 'Travel Time', 'Extra Activities',
@@ -153,7 +109,7 @@ def train_model(df_clean):
 
     # Initialize and train the classifier with hyperparameter optimizations
     clf = RandomForestClassifier(
-        n_estimators=250,
+        n_estimators=300, # Found to be the most efficient
         max_depth=12,
         min_samples_split=5,
         class_weight='balanced',  # Handles imbalanced grade distributions naturally
@@ -165,15 +121,10 @@ def train_model(df_clean):
 
     return clf, acc, X.columns, X_cat.columns, features_cat
 
-
-# ==========================================
 # APP NAVIGATION & ROUTING
-# ==========================================
-
 # Initialize session state for page routing
 if 'current_page' not in st.session_state:
     st.session_state.current_page = "Home"
-
 
 def go_to_findings():
     st.session_state.current_page = "Findings"
@@ -194,9 +145,7 @@ with logo_col:
 with menu_col:
     st.radio("Navigate:", menu_options, key="current_page", horizontal=True, label_visibility="collapsed")
 
-# ==========================================
 # PAGE 1: HOME
-# ==========================================
 if st.session_state.current_page == "Home":
     st.title("PredictEd: A Predictive Software for Student Performance")
     home_col1, home_col2 = st.columns([1.2, 1], gap="large")
@@ -221,10 +170,7 @@ if st.session_state.current_page == "Home":
         else:
             st.info(f"[Image Placeholder: {home_img_path.name} not found]")
 
-
-# ==========================================
 # PAGE 2: DATA FINDINGS (ANALYSIS)
-# ==========================================
 elif st.session_state.current_page == "Findings":
     st.title("Data Findings")
     st.write(
@@ -645,7 +591,7 @@ elif st.session_state.current_page == "Findings":
                     prediction = clf.predict(user_final)[0]
                     st.markdown("<br>", unsafe_allow_html=True)
 
-                    # Custom UI responses based on prediction outputs
+                    # Custom responses based on prediction outputs
                     if prediction == 'A':
                         st.success("🎉 **Prediction:** This student is likely to achieve an **A Grade**!")
                     elif prediction == 'B':
@@ -662,9 +608,7 @@ elif st.session_state.current_page == "Findings":
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_Performance.csv' is saved in the 'Dataset' folder.")
 
-# ==========================================
 # PAGE 3: RESOURCES & RAW DATA
-# ==========================================
 elif st.session_state.current_page == "Resources":
     st.title("Resources")
     st.write(
@@ -744,9 +688,7 @@ elif st.session_state.current_page == "Resources":
     except FileNotFoundError:
         st.error("Dataset not found. Please ensure 'Student_Performance.csv' is saved in the 'Dataset' folder.")
 
-# ==========================================
 # PAGE 4: ABOUT US
-# ==========================================
 elif st.session_state.current_page == "About Us":
     st.title("About Us")
     st.write(
