@@ -278,7 +278,7 @@ elif st.session_state.current_page == "Findings":
                     sns.histplot(df_clean['Overall Score'].dropna(), kde=True, color='#2E7D6B', ax=ax1)
                     ax1.set_xlabel("Overall Score")
                     st.pyplot(fig1)
-                 st.info("💡 **Interpretation:** The data forms a broad curve rather than the sharp bell-curved peak, indicating that student performance is widely distributed in the middle tier. A distinct left skew is also observed, showing clustering of scores within the lower middle to middle scores, and failing scores are found to be rare.")
+                st.info("💡 **Interpretation:** The data forms a broad curve rather than the sharp bell-curved peak, indicating that student performance is widely distributed in the middle tier. A distinct left skew is also observed, showing clustering of scores within the lower middle to middle scores, and failing scores are found to be rare.")
 
             with col2:
                 st.write("#### Final Grade Distribution")
@@ -292,7 +292,7 @@ elif st.session_state.current_page == "Findings":
                         "💡 **Interpretation:**\n\n"
                         "- The graph shows that Grade C and D are the most common outcomes followed by Grade E indicating that the majority of students consistently perform within the below-average-to-average range.\n"
                         "- The overall pass-to-fail ratio is extremely high, demonstrating that almost all students meet the required academic standards. The concentration of students within the C and D categories suggest a stable academic performance where most learners achieve satisfactory grades rather than extreme outcomes.")
-)
+
 
             st.markdown("---")
             col3, col4 = st.columns(2)
