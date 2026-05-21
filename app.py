@@ -210,7 +210,7 @@ if st.session_state.current_page == "Home":
         st.write("### What You Can Do")
         st.markdown(
             "* 📊 **Analyze Socioeconomic Trends:** Explore the distributions of student backgrounds.\n* 📈 **Visualize Performance Disparities:** Compare how different groups score on tests.\n* 🤖 **Predict Academic Outcomes:** Use machine learning to forecast grades based on demographics.\n* 🔍 **Discover Equity Insights:** Uncover which traits have the strongest impact on education.")
-        st.button("View Data Findings", on_click=go_to_findings)
+        st.button("View Data Findings", on_=go_to_findings)
 
     with home_col2:
         # Load local hero image based on user specifications
@@ -377,7 +377,7 @@ elif st.session_state.current_page == "Findings":
 
             with tab1:
                 st.write(
-                    "**Click on any slice to expand it!** The **size** of the wedge shows how many students are in that group. The **color** represents their Average Overall Score (Dark Red = Lowest, Dark Green = Highest).")
+                    "**Click on any slice to expand it!** The **size** of the wedge shows how many students are in that group. The central slice represents access to internet. The **color** represents their Average Overall Score (Dark Red = Lowest, Dark Green = Highest).")
                 if all(col in df_clean.columns for col in
                        ['Parent Education', 'Internet Access', 'Study Method', 'Overall Score']):
                     df_sunburst = df_clean.dropna(
