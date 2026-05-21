@@ -377,7 +377,7 @@ elif st.session_state.current_page == "Findings":
 
             with tab1:
                 st.write(
-                    "**Click on any slice to expand it!** The **size** of the wedge shows how many students are in that group. The central slice represents access to internet. The **color** represents their Average Overall Score (Dark Red = Lowest, Dark Green = Highest).")
+                    "**Click on any slice to expand it!** The **size** of the wedge shows how many students are in that group. The central slice represents **access to internet**. The **color** represents their Average Overall Score (Dark Red = Lowest, Dark Green = Highest).")
                 if all(col in df_clean.columns for col in
                        ['Parent Education', 'Internet Access', 'Study Method', 'Overall Score']):
                     df_sunburst = df_clean.dropna(
