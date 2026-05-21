@@ -377,6 +377,7 @@ elif st.session_state.current_page == "Findings":
                                 "💡 **Interpretation:** Students who participate in extra activities and those who do not have similar median scores and similar quartile ranges, suggesting that there is no advantage in having or not having extra activities."
                             ),
                         }
+                        st.info(box_interpretations.get(biv_option, "💡 **Interpretation:** Compare the median lines and IQR boxes across groups to identify performance differences."))
                 else:
                     st.error(f"Column '{x_col}' not found in the dataset.")
 
