@@ -484,9 +484,7 @@ elif st.session_state.current_page == "Findings":
 
                 with col_corr2:
                     st.info(
-                        "💡 **Interpretation:**\n\nGreen Bars correlate positively with higher scores. Red Bars correlate with lower scores.
-                        All traits have a Pearson Correlation absolute value of less than 0.02, indicating that no variable in the dataset has a significant effect on the test scores of students.
-                        Online videos as a means of studying and group study as a method for studying have the most positive and most negative impacts, respectively. However, they are only relatively better or worse, but their effects are still negligible")
+                        "💡 **Interpretation:**\n\nGreen Bars correlate positively with higher scores. Red Bars correlate with lower scores. \nAll traits have a Pearson Correlation absolute value of less than 0.02, indicating that no variable in the dataset has a significant effect on the test scores of students. \nOnline videos as a means of studying and group study as a method for studying have the most positive and most negative impacts, respectively. However, they are only relatively better or worse, but their effects are still negligible")
                 st.markdown("---")
 
                 st.markdown("### 2. The Compounding Effect of Advantage")
@@ -520,8 +518,7 @@ elif st.session_state.current_page == "Findings":
 
                 with col_corr4:
                     st.info(
-                        "💡 **Interpretation:**\n\nStudents who have an advantage, regardless of how many, have a higher overall score than a student with no advantage. 
-                        The number of advantages a student has has no significant effect on the overall, as evidenced by a near-consistent median score of students with different numbers of advantages.")
+                        "💡 **Interpretation:**\n\nStudents who have an advantage, regardless of how many, have a higher overall score than a student with no advantage. \nThe number of advantages a student has has no significant effect on the overall, as evidenced by a near-consistent median score of students with different numbers of advantages.")
                 st.markdown("---")
 
                 st.markdown("### 3. Academic Synergies (Subject Correlations)")
