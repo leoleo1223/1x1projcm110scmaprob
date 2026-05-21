@@ -365,7 +365,7 @@ elif st.session_state.current_page == "Findings":
                                 "💡 **Interpretation:** Different educational attainments of parents show identical median lines and interquartile ranges (IQR), implying that there is no single parents’ educational background that has an advantage over the others."
                             ),
                             "Internet Access vs Overall Score": (
-                                "💡 **Interpretation:** Both box plots show identical IQR ranges and median line, suggesting that students who have access to the internet perform better than those who do not, and vice versa."
+                                "💡 **Interpretation:** The group of students who have access to the internet, and those who do not, showed similar median scores and IQR’s, suggesting that internet access has no significant effect on student performance."
                             ),
                             "Study Method vs Overall Score": (
                                 "💡 **Interpretation:** Consistency among all study methods as observed by the equal box height, median line, and range of whiskers implies that no specific study method has an academic advantage over the others."
